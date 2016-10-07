@@ -1,17 +1,15 @@
 import * as _ from 'lodash';
-declare const require: any;
-const p5_js = require('p5');
-let p: p5;
-new p5_js(_p => {
-  p = _p;
-  p.setup = init;
-  p.draw = update;
-});
-const Vector = p5_js.Vector;
+import * as loop from './loop';
 
-const screenSize = new Vector(96, 128);
+let p5 = loop.p5;
+let p: p5;
+let screenSize: p5.Vector;
+
+loop.init(init, update);
 
 function init() {
+  p = loop.p;
+  screenSize = new p5.Vector(96, 128);
   const p5Canvas = p.createCanvas(screenSize.x, screenSize.y);
   p5Canvas.canvas.setAttribute('style', null);
   p5Canvas.canvas.setAttribute('id', 'main');
