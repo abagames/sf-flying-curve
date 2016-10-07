@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import * as loop from './loop';
+import Actor from './actor';
 
 let p5 = loop.p5;
 let p: p5;
@@ -18,8 +19,19 @@ function init() {
 }
 
 function update() {
-  p.background(0);
-  _.times(5, i => {
-    p.rect(i * 20, i * 30, 5, 5);
-  });
+  if (loop.ticks % 30 === 0) {
+    new Enemy();
+  }
+}
+
+class Enemy extends Actor {
+  constructor() {
+    super();
+    this.pos.x = 50;
+  }
+
+  update() {
+    this.pos.y++;
+    p.rect(this.pos.x, this.pos.y, 5, 5);
+  }
 }
