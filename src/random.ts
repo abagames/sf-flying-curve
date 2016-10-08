@@ -6,6 +6,18 @@ export default class Random {
   z: number;
   w: number;
 
+  get(fromOrTo: number = 1, to: number = null) {
+    if (to == null) {
+      to = fromOrTo;
+      fromOrTo = 0;
+    }
+    return this.getToMaxInt() / 0x7fffffff * (to - fromOrTo) + fromOrTo;
+  }
+
+  getInt(fromOrTo: number = 1, to: number = null) {
+    return Math.floor(this.get(fromOrTo, to));
+  }
+
   setSeed(v: number = -0x7fffffff) {
     if (v === -0x7fffffff) {
       v = Math.floor(Math.random() * 0x7fffffff);
@@ -17,7 +29,7 @@ export default class Random {
     return this;
   }
 
-  getInt() {
+  getToMaxInt() {
     var t = this.x ^ (this.x << 11);
     this.x = this.y;
     this.y = this.z;
@@ -26,13 +38,8 @@ export default class Random {
     return this.w;
   }
 
-  get01() {
-    return this.getInt() / 0x7fffffff;
-  }
-
   constructor() {
     this.setSeed();
-    this.get01 = this.get01.bind(this);
   }
 
   propNames = ['x', 'y', 'z', 'w'];

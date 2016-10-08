@@ -3,15 +3,20 @@ declare const require: any;
 export const p5 = require('p5');
 
 export default class Actor {
-  pos = new p5.Vector();
-  vel = new p5.Vector();
+  pos: p5.Vector = new p5.Vector();
+  vel: p5.Vector = new p5.Vector();
   angle = 0;
   speed = 1;
   isAlive = true;
   priority = 1;
+  ticks = 0;
 
   constructor() {
     Actor.add(this);
+  }
+
+  update() {
+    this.ticks++;
   }
 
   remove() {
