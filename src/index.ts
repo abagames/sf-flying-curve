@@ -2,6 +2,7 @@ import * as _ from 'lodash';
 import * as loop from './loop';
 import Actor from './actor';
 import Random from './random';
+import * as ui from './ui';
 
 let p5 = loop.p5;
 let p: p5;
@@ -16,9 +17,10 @@ let flyingCurve: FlyingCurve;
 function init() {
   p = loop.p;
   screenSize = new p5.Vector(96, 128);
-  const p5Canvas = p.createCanvas(screenSize.x, screenSize.y);
-  p5Canvas.canvas.setAttribute('style', null);
-  p5Canvas.canvas.setAttribute('id', 'main');
+  const p5Canvas = p.createCanvas(screenSize.x, screenSize.y).canvas;
+  p5Canvas.setAttribute('style', null);
+  p5Canvas.setAttribute('id', 'main');
+  ui.init(p5Canvas, screenSize);
   p.fill(255);
   p.noStroke();
   player = new Player();
@@ -36,10 +38,22 @@ function update() {
 }
 
 class Player extends Actor {
+  screenPos: p5.Vector = new p5.Vector();
+
+  constructor() {
+    super();
+    this.screenPos.set(screenSize.x / 2, screenSize.y * 0.8);
+    ui.setCurrentTargetPos(this.screenPos);
+  }
+
   update() {
-    this.pos.x = p.sin(this.ticks * 0.05) * 0.3 + 0.5;
-    this.pos.y = p.sin(this.ticks * 0.03) * 0.1 + 0.8;
-    p.rect(this.pos.x * screenSize.x - 2.5, this.pos.y * screenSize.y - 2.5, 5, 5);
+    this.screenPos.set(ui.targetPos);
+    this.screenPos.set(
+      p.constrain(this.screenPos.x , 0, screenSize.x),
+      p.constrain(this.screenPos.y , 0, screenSize.y)
+    );
+    this.pos.set(this.screenPos.x / screenSize.x, this.screenPos.y / screenSize.y);
+    p.rect(this.screenPos.x - 2.5, this.screenPos.y - 2.5, 5, 5);
     super.update();
   }
 }
