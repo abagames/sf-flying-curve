@@ -11,12 +11,15 @@ let random = new Random();
 
 loop.init(init, update);
 
+let scrollScreenSizeX: number;
+let scrollOffsetX = 0;
 let player: Player;
 let flyingCurve: FlyingCurve;
 
 function init() {
   p = loop.p;
   screenSize = new p5.Vector(96, 128);
+  scrollScreenSizeX = 128;
   const p5Canvas = p.createCanvas(screenSize.x, screenSize.y).canvas;
   p5Canvas.setAttribute('style', null);
   p5Canvas.setAttribute('id', 'main');
@@ -49,10 +52,15 @@ class Player extends Actor {
   update() {
     this.screenPos.set(ui.targetPos);
     this.screenPos.set(
-      p.constrain(this.screenPos.x , 0, screenSize.x),
-      p.constrain(this.screenPos.y , 0, screenSize.y)
+      p.constrain(this.screenPos.x, 0, screenSize.x),
+      p.constrain(this.screenPos.y, 0, screenSize.y)
     );
-    this.pos.set(this.screenPos.x / screenSize.x, this.screenPos.y / screenSize.y);
+    scrollOffsetX =
+      (this.screenPos.x / screenSize.x) * (scrollScreenSizeX - screenSize.x);
+    this.pos.set(
+      (this.screenPos.x + scrollOffsetX) / scrollScreenSizeX,
+      this.screenPos.y / screenSize.y
+    );
     p.rect(this.screenPos.x - 2.5, this.screenPos.y - 2.5, 5, 5);
     super.update();
   }
@@ -132,10 +140,13 @@ class Enemy extends Actor {
     if (step.curve.type !== CurveType.aim) {
       this.pos.y += step.ySpeed * this.yWay * this.flyingCurve.velScale.y;
     }
-    if (this.pos.x < -0.1 || this.pos.x > 1.1 || this.pos.y < -0.1 || this.pos.y > 1.1) {
+    const sx = this.pos.x * scrollScreenSizeX - scrollOffsetX;
+    const sy = this.pos.y * screenSize.y;
+    if (sx < scrollScreenSizeX * -0.1 || sx > scrollScreenSizeX * 1.1 ||
+      this.pos.y < -0.1 || this.pos.y > 1.1) {
       this.remove();
     }
-    p.rect(this.pos.x * screenSize.x - 2.5, this.pos.y * screenSize.y - 2.5, 5, 5);
+    p.rect(sx - 2.5, sy - 2.5, 5, 5);
     this.checkTrigger();
     super.update();
   }
