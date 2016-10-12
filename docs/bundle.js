@@ -45,8 +45,12 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(1);
-	__webpack_require__(2);
-	module.exports = __webpack_require__(5);
+	__webpack_require__(5);
+	__webpack_require__(6);
+	__webpack_require__(7);
+	__webpack_require__(8);
+	__webpack_require__(12);
+	module.exports = __webpack_require__(10);
 
 
 /***/ },
@@ -54,20 +58,23 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var _ = __webpack_require__(3);
-	exports.p5 = __webpack_require__(6);
+	var _ = __webpack_require__(2);
+	exports.p5 = __webpack_require__(4);
 	var Actor = (function () {
 	    function Actor() {
 	        this.pos = new exports.p5.Vector();
 	        this.vel = new exports.p5.Vector();
 	        this.angle = 0;
-	        this.speed = 1;
+	        this.speed = 0;
 	        this.isAlive = true;
 	        this.priority = 1;
 	        this.ticks = 0;
 	        Actor.add(this);
 	    }
 	    Actor.prototype.update = function () {
+	        this.pos.add(this.vel);
+	        this.pos.x += Math.cos(this.angle) * this.speed;
+	        this.pos.y += Math.sin(this.angle) * this.speed;
 	        this.ticks++;
 	    };
 	    Actor.prototype.remove = function () {
@@ -101,243 +108,6 @@
 
 /***/ },
 /* 2 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var __extends = (this && this.__extends) || function (d, b) {
-	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-	    function __() { this.constructor = d; }
-	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	};
-	var _ = __webpack_require__(3);
-	var loop = __webpack_require__(5);
-	var actor_1 = __webpack_require__(1);
-	var random_1 = __webpack_require__(7);
-	var ui = __webpack_require__(9);
-	var p5 = loop.p5;
-	var p;
-	var screenSize;
-	var random = new random_1.default();
-	loop.init(init, update);
-	var player;
-	var flyingCurve;
-	function init() {
-	    p = loop.p;
-	    screenSize = new p5.Vector(96, 128);
-	    var p5Canvas = p.createCanvas(screenSize.x, screenSize.y).canvas;
-	    p5Canvas.setAttribute('style', null);
-	    p5Canvas.setAttribute('id', 'main');
-	    ui.init(p5Canvas, screenSize);
-	    p.fill(255);
-	    p.noStroke();
-	    player = new Player();
-	}
-	function update() {
-	    if (loop.ticks % 200 === 0) {
-	        flyingCurve = new FlyingCurve();
-	    }
-	    if (loop.ticks % 20 === 0) {
-	        var e = new Enemy();
-	        e.flyingCurve = flyingCurve;
-	        e.spawn();
-	    }
-	}
-	var Player = (function (_super) {
-	    __extends(Player, _super);
-	    function Player() {
-	        _super.call(this);
-	        this.screenPos = new p5.Vector();
-	        this.screenPos.set(screenSize.x / 2, screenSize.y * 0.8);
-	        ui.setCurrentTargetPos(this.screenPos);
-	    }
-	    Player.prototype.update = function () {
-	        this.screenPos.set(ui.targetPos);
-	        this.screenPos.set(p.constrain(this.screenPos.x, 0, screenSize.x), p.constrain(this.screenPos.y, 0, screenSize.y));
-	        this.pos.set(this.screenPos.x / screenSize.x, this.screenPos.y / screenSize.y);
-	        p.rect(this.screenPos.x - 2.5, this.screenPos.y - 2.5, 5, 5);
-	        _super.prototype.update.call(this);
-	    };
-	    return Player;
-	}(actor_1.default));
-	var Enemy = (function (_super) {
-	    __extends(Enemy, _super);
-	    function Enemy() {
-	        _super.apply(this, arguments);
-	        this.stepIndex = -1;
-	        this.yWay = 1;
-	    }
-	    Enemy.prototype.spawn = function () {
-	        switch (this.flyingCurve.spawnType) {
-	            case SpawnType.random:
-	                this.pos.x = random.get();
-	                this.pos.y = -0.05;
-	                this.sineAngle = random.get() < 0.5 ? -p.PI / 2 : p.PI / 2;
-	                break;
-	            case SpawnType.oppositeX:
-	                if (player.pos.x > 0.5) {
-	                    this.pos.x = 0.25;
-	                    this.sineAngle = -p.PI / 2;
-	                }
-	                else {
-	                    this.pos.x = 0.75;
-	                    this.sineAngle = p.PI / 2;
-	                }
-	                break;
-	        }
-	        this.goToNextStep();
-	    };
-	    Enemy.prototype.goToNextStep = function () {
-	        this.stepIndex++;
-	        var step = this.flyingCurve.steps[this.stepIndex];
-	        var t;
-	        switch (step.curve.type) {
-	            case CurveType.sine:
-	                var w = p.sin(this.sineAngle) * step.curve.width;
-	                this.sineCenterX = this.pos.x - w;
-	                break;
-	            case CurveType.aimX:
-	            case CurveType.opposite:
-	                t = this.yWay > 0 ? (1 - this.pos.y) / step.ySpeed : this.pos.y / step.ySpeed;
-	                t = p.constrain(t, 1, 9999999);
-	                var ax = step.curve.type === CurveType.aimX ? player.pos.x :
-	                    (this.pos.x < 0.5 ? 0.75 : 0.25);
-	                this.vel.x = (ax - this.pos.x) / t;
-	                break;
-	            case CurveType.aim:
-	                var ox = player.pos.x - this.pos.x;
-	                var oy = player.pos.y - this.pos.y;
-	                t = p.mag(ox, oy) / step.ySpeed;
-	                t = p.constrain(t, 1, 9999999);
-	                this.vel.set(ox, oy);
-	                this.vel.div(t);
-	                break;
-	        }
-	    };
-	    Enemy.prototype.update = function () {
-	        var step = this.flyingCurve.steps[this.stepIndex];
-	        switch (step.curve.type) {
-	            case CurveType.sine:
-	                this.pos.x = p.sin(this.sineAngle) * step.curve.width + this.sineCenterX;
-	                this.sineAngle += step.curve.angleSpeed * this.flyingCurve.velScale.x;
-	                break;
-	            case CurveType.aimX:
-	            case CurveType.opposite:
-	                this.pos.x += this.vel.x * this.flyingCurve.velScale.x;
-	                break;
-	            case CurveType.aim:
-	                this.pos.x += this.vel.x * this.flyingCurve.velScale.x;
-	                this.pos.y += this.vel.y * this.flyingCurve.velScale.y;
-	                break;
-	        }
-	        if (step.curve.type !== CurveType.aim) {
-	            this.pos.y += step.ySpeed * this.yWay * this.flyingCurve.velScale.y;
-	        }
-	        if (this.pos.x < -0.1 || this.pos.x > 1.1 || this.pos.y < -0.1 || this.pos.y > 1.1) {
-	            this.remove();
-	        }
-	        p.rect(this.pos.x * screenSize.x - 2.5, this.pos.y * screenSize.y - 2.5, 5, 5);
-	        this.checkTrigger();
-	        _super.prototype.update.call(this);
-	    };
-	    Enemy.prototype.checkTrigger = function () {
-	        var trigger = this.flyingCurve.steps[this.stepIndex].trigger;
-	        var isFired = false;
-	        switch (trigger.type) {
-	            case TriggerType.crossHalf:
-	                isFired = (this.pos.y - 0.5) * this.yWay > 0;
-	                break;
-	            case TriggerType.crossPlayer:
-	                isFired = (this.pos.y - player.pos.y) * this.yWay > 0;
-	                break;
-	            case TriggerType.hitTopBottom:
-	                isFired = (this.yWay > 0 && this.pos.y > 1) || (this.yWay < 0 && this.pos.y < 0);
-	                break;
-	        }
-	        if (isFired) {
-	            if (trigger.isReverseYWay) {
-	                this.yWay *= -1;
-	            }
-	            this.goToNextStep();
-	        }
-	    };
-	    return Enemy;
-	}(actor_1.default));
-	var FlyingCurve = (function () {
-	    function FlyingCurve() {
-	        this.velScale = new p5.Vector(1, 1);
-	        this.generate();
-	    }
-	    FlyingCurve.prototype.generate = function () {
-	        this.steps = [];
-	        var sc = random.getInt(1, 4);
-	        this.steps = _.times(sc, function () {
-	            var step = new Step();
-	            step.curve.type = getRandomEnum(CurveType);
-	            step.curve.angleSpeed = get2DRandom(0.02, 0.2);
-	            step.curve.width = get2DRandom(0.1, 0.5);
-	            step.ySpeed = get2DRandom(0.01, 0.02);
-	            step.trigger.type = getRandomEnum(TriggerType, 1);
-	            step.trigger.isReverseYWay = random.get() < 0.5;
-	            step.isFiring = random.get() < 0.75;
-	            return step;
-	        });
-	        this.steps[this.steps.length - 1].trigger.type = TriggerType.none;
-	        this.spawnType = getRandomEnum(SpawnType);
-	        this.velScale.x = get2DRandom(0.5, 1.5);
-	        this.velScale.y = get2DRandom(0.5, 1.5);
-	    };
-	    return FlyingCurve;
-	}());
-	var Step = (function () {
-	    function Step() {
-	        this.curve = new Curve();
-	        this.trigger = new Trigger();
-	    }
-	    return Step;
-	}());
-	var Curve = (function () {
-	    function Curve() {
-	    }
-	    return Curve;
-	}());
-	var CurveType;
-	(function (CurveType) {
-	    CurveType[CurveType["down"] = 0] = "down";
-	    CurveType[CurveType["opposite"] = 1] = "opposite";
-	    CurveType[CurveType["aim"] = 2] = "aim";
-	    CurveType[CurveType["aimX"] = 3] = "aimX";
-	    CurveType[CurveType["sine"] = 4] = "sine";
-	})(CurveType || (CurveType = {}));
-	var Trigger = (function () {
-	    function Trigger() {
-	        this.isReverseYWay = false;
-	    }
-	    return Trigger;
-	}());
-	var TriggerType;
-	(function (TriggerType) {
-	    TriggerType[TriggerType["crossHalf"] = 0] = "crossHalf";
-	    TriggerType[TriggerType["crossPlayer"] = 1] = "crossPlayer";
-	    TriggerType[TriggerType["hitTopBottom"] = 2] = "hitTopBottom";
-	    TriggerType[TriggerType["none"] = 3] = "none";
-	})(TriggerType || (TriggerType = {}));
-	var SpawnType;
-	(function (SpawnType) {
-	    SpawnType[SpawnType["random"] = 0] = "random";
-	    SpawnType[SpawnType["oppositeX"] = 1] = "oppositeX";
-	})(SpawnType || (SpawnType = {}));
-	function get2DRandom(from, to) {
-	    var o = (to - from) / 2;
-	    return random.get() * o + random.get() * o + from;
-	}
-	function getRandomEnum(obj, offset) {
-	    if (offset === void 0) { offset = 0; }
-	    return obj[obj[random.getInt(_.keys(obj).length / 2 - offset)]];
-	}
-
-
-/***/ },
-/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global, module) {/**
@@ -17323,10 +17093,10 @@
 	  }
 	}.call(this));
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(4)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(3)(module)))
 
 /***/ },
-/* 4 */
+/* 3 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -17342,42 +17112,7 @@
 
 
 /***/ },
-/* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var actor_1 = __webpack_require__(1);
-	exports.p5 = __webpack_require__(6);
-	exports.options = {
-	    backgroundColor: 0
-	};
-	exports.ticks = 0;
-	var initFunc;
-	var updateFunc;
-	function init(_initFunc, _updateFunc) {
-	    initFunc = _initFunc;
-	    updateFunc = _updateFunc;
-	    actor_1.default.clear();
-	    new exports.p5(function (_p) {
-	        exports.p = _p;
-	        exports.p.setup = setup;
-	        exports.p.draw = draw;
-	    });
-	}
-	exports.init = init;
-	function setup() {
-	    initFunc();
-	}
-	function draw() {
-	    exports.p.background(exports.options.backgroundColor);
-	    updateFunc();
-	    actor_1.default.update();
-	    exports.ticks++;
-	}
-
-
-/***/ },
-/* 6 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var require;var require;/*! p5.js v0.5.4 October 01, 2016 */
@@ -50411,11 +50146,359 @@
 	});
 
 /***/ },
+/* 5 */
+/***/ function(module, exports) {
+
+	"use strict";
+	function initSeedUi(onSeedChanged) {
+	    var p = document.createElement('p');
+	    p.innerHTML = '<button id="change">change</button>' +
+	        'random seed: <input type="number" id="seed" value="0"></input>' +
+	        '<button id="set">set</button>';
+	    document.getElementsByTagName('body')[0].appendChild(p);
+	    var changeElm = document.getElementById('change');
+	    var seedElm = document.getElementById('seed');
+	    var setElm = document.getElementById('set');
+	    changeElm.onclick = function () {
+	        seedElm.value = Math.floor(Math.random() * 9999999).toString();
+	        onSeedChanging();
+	    };
+	    setElm.onclick = onSeedChanging;
+	    function onSeedChanging() {
+	        onSeedChanged(Number(seedElm.value));
+	    }
+	}
+	exports.initSeedUi = initSeedUi;
+	function enableShowingErrors() {
+	    var pre = document.createElement('pre');
+	    document.getElementsByTagName('body')[0].appendChild(pre);
+	    window.addEventListener('error', function (error) {
+	        var message = [error.filename, '@', error.lineno, ':\n', error.message].join('');
+	        pre.textContent += '\n' + message;
+	        return false;
+	    });
+	}
+	exports.enableShowingErrors = enableShowingErrors;
+
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var __extends = (this && this.__extends) || function (d, b) {
+	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+	    function __() { this.constructor = d; }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	};
+	var _ = __webpack_require__(2);
+	var loop = __webpack_require__(7);
+	var actor_1 = __webpack_require__(1);
+	var random_1 = __webpack_require__(8);
+	var ui = __webpack_require__(10);
+	var p5 = loop.p5;
+	var p;
+	var screenSize;
+	var random = new random_1.default();
+	loop.init(init, update);
+	var scrollScreenSizeX;
+	var scrollOffsetX = 0;
+	var player;
+	var flyingCurve;
+	function init() {
+	    p = loop.p;
+	    screenSize = new p5.Vector(96, 128);
+	    scrollScreenSizeX = 128;
+	    var p5Canvas = p.createCanvas(screenSize.x, screenSize.y).canvas;
+	    p5Canvas.setAttribute('style', null);
+	    p5Canvas.setAttribute('id', 'main');
+	    ui.init(p5Canvas, screenSize);
+	    p.fill(255);
+	    p.noStroke();
+	    player = new Player();
+	}
+	function update() {
+	    if (loop.ticks % 200 === 0) {
+	        flyingCurve = new FlyingCurve();
+	    }
+	    if (loop.ticks % 20 === 0) {
+	        var e = new Enemy();
+	        e.flyingCurve = flyingCurve;
+	        e.spawn();
+	    }
+	}
+	var Player = (function (_super) {
+	    __extends(Player, _super);
+	    function Player() {
+	        _super.call(this);
+	        this.screenPos = new p5.Vector();
+	        this.screenPos.set(screenSize.x / 2, screenSize.y * 0.8);
+	        ui.setCurrentTargetPos(this.screenPos);
+	    }
+	    Player.prototype.update = function () {
+	        this.screenPos.set(ui.targetPos);
+	        this.screenPos.set(p.constrain(this.screenPos.x, 0, screenSize.x), p.constrain(this.screenPos.y, 0, screenSize.y));
+	        scrollOffsetX =
+	            (this.screenPos.x / screenSize.x) * (scrollScreenSizeX - screenSize.x);
+	        this.pos.set(this.screenPos.x / screenSize.x, this.screenPos.y / screenSize.y);
+	        p.rect(this.screenPos.x - 2.5, this.screenPos.y - 2.5, 5, 5);
+	        _super.prototype.update.call(this);
+	    };
+	    return Player;
+	}(actor_1.default));
+	var Enemy = (function (_super) {
+	    __extends(Enemy, _super);
+	    function Enemy() {
+	        _super.apply(this, arguments);
+	        this.stepIndex = -1;
+	        this.yWay = 1;
+	        this.firingInterval = 60;
+	    }
+	    Enemy.prototype.spawn = function () {
+	        switch (this.flyingCurve.spawnType) {
+	            case SpawnType.random:
+	                this.pos.x = random.get();
+	                this.pos.y = -0.05;
+	                this.sineAngle = random.get() < 0.5 ? -p.PI / 2 : p.PI / 2;
+	                break;
+	            case SpawnType.oppositeX:
+	                if (player.pos.x > 0.5) {
+	                    this.pos.x = 0.25;
+	                    this.sineAngle = -p.PI / 2;
+	                }
+	                else {
+	                    this.pos.x = 0.75;
+	                    this.sineAngle = p.PI / 2;
+	                }
+	                break;
+	        }
+	        this.firingTicks = random.getInt(this.firingInterval);
+	        this.goToNextStep();
+	    };
+	    Enemy.prototype.goToNextStep = function () {
+	        this.stepIndex++;
+	        var step = this.flyingCurve.steps[this.stepIndex];
+	        var t;
+	        switch (step.curve.type) {
+	            case CurveType.sine:
+	                var w = p.sin(this.sineAngle) * step.curve.width;
+	                this.sineCenterX = this.pos.x - w;
+	                break;
+	            case CurveType.aimX:
+	            case CurveType.opposite:
+	                t = this.yWay > 0 ? (1 - this.pos.y) / step.ySpeed : this.pos.y / step.ySpeed;
+	                t = p.constrain(t, 1, 9999999);
+	                var ax = step.curve.type === CurveType.aimX ? player.pos.x :
+	                    (this.pos.x < 0.5 ? 0.75 : 0.25);
+	                this.vel.x = (ax - this.pos.x) / t;
+	                break;
+	            case CurveType.aim:
+	                var ox = player.pos.x - this.pos.x;
+	                var oy = player.pos.y - this.pos.y;
+	                t = p.mag(ox, oy) / step.ySpeed;
+	                t = p.constrain(t, 1, 9999999);
+	                this.vel.set(ox, oy);
+	                this.vel.div(t);
+	                break;
+	        }
+	    };
+	    Enemy.prototype.update = function () {
+	        var step = this.flyingCurve.steps[this.stepIndex];
+	        switch (step.curve.type) {
+	            case CurveType.sine:
+	                this.pos.x = p.sin(this.sineAngle) * step.curve.width + this.sineCenterX;
+	                this.sineAngle += step.curve.angleSpeed * this.flyingCurve.velScale.x;
+	                break;
+	            case CurveType.aimX:
+	            case CurveType.opposite:
+	                this.pos.x += this.vel.x * this.flyingCurve.velScale.x;
+	                break;
+	            case CurveType.aim:
+	                this.pos.x += this.vel.x * this.flyingCurve.velScale.x;
+	                this.pos.y += this.vel.y * this.flyingCurve.velScale.y;
+	                break;
+	        }
+	        if (step.curve.type !== CurveType.aim) {
+	            this.pos.y += step.ySpeed * this.yWay * this.flyingCurve.velScale.y;
+	        }
+	        if (step.isFiring) {
+	            this.firingTicks--;
+	            if (this.firingTicks <= 0) {
+	                new Bullet(this.pos);
+	                this.firingTicks = this.firingInterval;
+	            }
+	        }
+	        var sx = this.pos.x * scrollScreenSizeX - scrollOffsetX;
+	        var sy = this.pos.y * screenSize.y;
+	        if (sx < scrollScreenSizeX * -0.1 || sx > scrollScreenSizeX * 1.1 ||
+	            this.pos.y < -0.1 || this.pos.y > 1.1) {
+	            this.remove();
+	        }
+	        p.rect(sx - 2.5, sy - 2.5, 5, 5);
+	        this.checkTrigger();
+	        _super.prototype.update.call(this);
+	    };
+	    Enemy.prototype.checkTrigger = function () {
+	        var trigger = this.flyingCurve.steps[this.stepIndex].trigger;
+	        var isFired = false;
+	        switch (trigger.type) {
+	            case TriggerType.crossHalf:
+	                isFired = (this.pos.y - 0.5) * this.yWay > 0;
+	                break;
+	            case TriggerType.crossPlayer:
+	                isFired = (this.pos.y - player.pos.y) * this.yWay > 0;
+	                break;
+	            case TriggerType.hitTopBottom:
+	                isFired = (this.yWay > 0 && this.pos.y > 1) || (this.yWay < 0 && this.pos.y < 0);
+	                break;
+	        }
+	        if (isFired) {
+	            if (trigger.isReverseYWay) {
+	                this.yWay *= -1;
+	            }
+	            this.goToNextStep();
+	        }
+	    };
+	    return Enemy;
+	}(actor_1.default));
+	var FlyingCurve = (function () {
+	    function FlyingCurve() {
+	        this.velScale = new p5.Vector(1, 1);
+	        this.generate();
+	    }
+	    FlyingCurve.prototype.generate = function () {
+	        this.steps = [];
+	        var sc = random.getInt(1, 4);
+	        this.steps = _.times(sc, function () {
+	            var step = new Step();
+	            step.curve.type = getRandomEnum(CurveType);
+	            step.curve.angleSpeed = get2DRandom(0.02, 0.2);
+	            step.curve.width = get2DRandom(0.1, 0.5);
+	            step.ySpeed = get2DRandom(0.01, 0.02);
+	            step.trigger.type = getRandomEnum(TriggerType, 1);
+	            step.trigger.isReverseYWay = random.get() < 0.5;
+	            step.isFiring = random.get() < 0.75;
+	            return step;
+	        });
+	        this.steps[this.steps.length - 1].trigger.type = TriggerType.none;
+	        this.spawnType = getRandomEnum(SpawnType);
+	        this.velScale.x = get2DRandom(0.5, 1.5);
+	        this.velScale.y = get2DRandom(0.5, 1.5);
+	    };
+	    return FlyingCurve;
+	}());
+	var Step = (function () {
+	    function Step() {
+	        this.curve = new Curve();
+	        this.trigger = new Trigger();
+	    }
+	    return Step;
+	}());
+	var Curve = (function () {
+	    function Curve() {
+	    }
+	    return Curve;
+	}());
+	var CurveType;
+	(function (CurveType) {
+	    CurveType[CurveType["down"] = 0] = "down";
+	    CurveType[CurveType["opposite"] = 1] = "opposite";
+	    CurveType[CurveType["aim"] = 2] = "aim";
+	    CurveType[CurveType["aimX"] = 3] = "aimX";
+	    CurveType[CurveType["sine"] = 4] = "sine";
+	})(CurveType || (CurveType = {}));
+	var Trigger = (function () {
+	    function Trigger() {
+	        this.isReverseYWay = false;
+	    }
+	    return Trigger;
+	}());
+	var TriggerType;
+	(function (TriggerType) {
+	    TriggerType[TriggerType["crossHalf"] = 0] = "crossHalf";
+	    TriggerType[TriggerType["crossPlayer"] = 1] = "crossPlayer";
+	    TriggerType[TriggerType["hitTopBottom"] = 2] = "hitTopBottom";
+	    TriggerType[TriggerType["none"] = 3] = "none";
+	})(TriggerType || (TriggerType = {}));
+	var SpawnType;
+	(function (SpawnType) {
+	    SpawnType[SpawnType["random"] = 0] = "random";
+	    SpawnType[SpawnType["oppositeX"] = 1] = "oppositeX";
+	})(SpawnType || (SpawnType = {}));
+	function get2DRandom(from, to) {
+	    var o = (to - from) / 2;
+	    return random.get() * o + random.get() * o + from;
+	}
+	function getRandomEnum(obj, offset) {
+	    if (offset === void 0) { offset = 0; }
+	    return obj[obj[random.getInt(_.keys(obj).length / 2 - offset)]];
+	}
+	var Bullet = (function (_super) {
+	    __extends(Bullet, _super);
+	    function Bullet(pos) {
+	        _super.call(this);
+	        this.pos.set(pos);
+	        var ofs = new p5.Vector();
+	        ofs.set(player.pos);
+	        ofs.sub(pos);
+	        this.angle = ofs.heading();
+	        this.speed = random.get(0.01, 0.03);
+	    }
+	    Bullet.prototype.update = function () {
+	        var sx = this.pos.x * scrollScreenSizeX - scrollOffsetX;
+	        var sy = this.pos.y * screenSize.y;
+	        if (sx < scrollScreenSizeX * -0.1 || sx > scrollScreenSizeX * 1.1 ||
+	            this.pos.y < -0.1 || this.pos.y > 1.1) {
+	            this.remove();
+	        }
+	        p.rect(sx - 1.5, sy - 1.5, 3, 3);
+	        _super.prototype.update.call(this);
+	    };
+	    return Bullet;
+	}(actor_1.default));
+
+
+/***/ },
 /* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var ir = __webpack_require__(8);
+	var actor_1 = __webpack_require__(1);
+	exports.p5 = __webpack_require__(4);
+	exports.options = {
+	    backgroundColor: 0
+	};
+	exports.ticks = 0;
+	var initFunc;
+	var updateFunc;
+	function init(_initFunc, _updateFunc) {
+	    initFunc = _initFunc;
+	    updateFunc = _updateFunc;
+	    actor_1.default.clear();
+	    new exports.p5(function (_p) {
+	        exports.p = _p;
+	        exports.p.setup = setup;
+	        exports.p.draw = draw;
+	    });
+	}
+	exports.init = init;
+	function setup() {
+	    initFunc();
+	}
+	function draw() {
+	    exports.p.background(exports.options.backgroundColor);
+	    updateFunc();
+	    actor_1.default.update();
+	    exports.ticks++;
+	}
+
+
+/***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var ir = __webpack_require__(9);
 	var Random = (function () {
 	    function Random() {
 	        this.propNames = ['x', 'y', 'z', 'w'];
@@ -50467,7 +50550,7 @@
 
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function webpackUniversalModuleDefinition(root, factory) {
@@ -51184,12 +51267,12 @@
 	;
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var sss = __webpack_require__(10);
-	var loop = __webpack_require__(5);
+	var sss = __webpack_require__(11);
+	var loop = __webpack_require__(7);
 	var p5 = loop.p5;
 	var p;
 	exports.cursorPos = new p5.Vector();
@@ -51255,7 +51338,7 @@
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function webpackUniversalModuleDefinition(root, factory) {
@@ -52859,6 +52942,93 @@
 	/******/ ])
 	});
 	;
+
+/***/ },
+/* 12 */
+/***/ function(module, exports) {
+
+	"use strict";
+	var dotPatterns;
+	var charToIndex;
+	var context;
+	function init(_context) {
+	    context = _context;
+	    var letterCount = 66;
+	    var letterPatterns = [
+	        0x4644AAA4, 0x6F2496E4, 0xF5646949, 0x167871F4, 0x2489F697,
+	        0xE9669696, 0x79F99668, 0x91967979, 0x1F799976, 0x1171FF17,
+	        0xF99ED196, 0xEE444E99, 0x53592544, 0xF9F11119, 0x9DDB9999,
+	        0x79769996, 0x7ED99611, 0x861E9979, 0x994444E7, 0x46699699,
+	        0x6996FD99, 0xF4469999, 0x2224F248, 0x26244424, 0x64446622,
+	        0x84284248, 0x40F0F024, 0x0F0044E4, 0x480A4E40, 0x9A459124,
+	        0x000A5A16, 0x640444F0, 0x80004049, 0x40400004, 0x44444040,
+	        0x0AA00044, 0x6476E400, 0xFAFA61D9, 0xE44E4EAA, 0x24F42445,
+	        0xF244E544, 0x00000042
+	    ];
+	    var p = 0;
+	    var d = 32;
+	    var pIndex = 0;
+	    dotPatterns = [];
+	    for (var i = 0; i < letterCount; i++) {
+	        var dots = [];
+	        for (var y = 0; y < 5; y++) {
+	            for (var x = 0; x < 4; x++) {
+	                if (++d >= 32) {
+	                    p = letterPatterns[pIndex++];
+	                    d = 0;
+	                }
+	                if ((p & 1) > 0) {
+	                    dots.push({ x: x, y: y });
+	                }
+	                p >>= 1;
+	            }
+	        }
+	        dotPatterns.push(dots);
+	    }
+	    var charStr = "()[]<>=+-*/%&_!?,.:|'\"$@#\\urdl";
+	    charToIndex = [];
+	    for (var c = 0; c < 128; c++) {
+	        var li = -2;
+	        if (c == 32) {
+	            li = -1;
+	        }
+	        else if (c >= 48 && c < 58) {
+	            li = c - 48;
+	        }
+	        else if (c >= 65 && c < 90) {
+	            li = c - 65 + 10;
+	        }
+	        else {
+	            var ci = charStr.indexOf(String.fromCharCode(c));
+	            if (ci >= 0) {
+	                li = ci + 36;
+	            }
+	        }
+	        charToIndex.push(li);
+	    }
+	}
+	exports.init = init;
+	function draw(str, x, y) {
+	    for (var i = 0; i < str.length; i++) {
+	        var idx = charToIndex[str.charCodeAt(i)];
+	        if (idx === -2) {
+	            throw "invalid char: " + str.charAt(i);
+	        }
+	        else if (idx >= 0) {
+	            drawLetter(idx, x, y);
+	        }
+	        x += 5;
+	    }
+	}
+	exports.draw = draw;
+	function drawLetter(idx, x, y) {
+	    var p = dotPatterns[idx];
+	    for (var i = 0; i < p.length; i++) {
+	        var d = p[i];
+	        context.fillRect(d.x + x, d.y + y, 1, 1);
+	    }
+	}
+
 
 /***/ }
 /******/ ]);

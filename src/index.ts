@@ -58,7 +58,7 @@ class Player extends Actor {
     scrollOffsetX =
       (this.screenPos.x / screenSize.x) * (scrollScreenSizeX - screenSize.x);
     this.pos.set(
-      (this.screenPos.x + scrollOffsetX) / scrollScreenSizeX,
+      this.screenPos.x / screenSize.x,
       this.screenPos.y / screenSize.y
     );
     p.rect(this.screenPos.x - 2.5, this.screenPos.y - 2.5, 5, 5);
@@ -72,6 +72,8 @@ class Enemy extends Actor {
   sineAngle: number;
   sineCenterX: number;
   yWay = 1;
+  firingTicks: number;
+  firingInterval = 60;
 
   spawn() {
     switch (this.flyingCurve.spawnType) {
@@ -90,6 +92,7 @@ class Enemy extends Actor {
         }
         break;
     }
+    this.firingTicks = random.getInt(this.firingInterval);
     this.goToNextStep();
   }
 
@@ -139,6 +142,13 @@ class Enemy extends Actor {
     }
     if (step.curve.type !== CurveType.aim) {
       this.pos.y += step.ySpeed * this.yWay * this.flyingCurve.velScale.y;
+    }
+    if (step.isFiring) {
+      this.firingTicks--;
+      if (this.firingTicks <= 0) {
+        new Bullet(this.pos);
+        this.firingTicks = this.firingInterval;
+      }
     }
     const sx = this.pos.x * scrollScreenSizeX - scrollOffsetX;
     const sy = this.pos.y * screenSize.y;
@@ -241,4 +251,27 @@ function get2DRandom(from: number, to: number) {
 
 function getRandomEnum(obj, offset = 0) {
   return obj[obj[random.getInt(_.keys(obj).length / 2 - offset)]];
+}
+
+class Bullet extends Actor {
+  constructor(pos: p5.Vector) {
+    super();
+    this.pos.set(pos);
+    let ofs: p5.Vector = new p5.Vector();
+    ofs.set(player.pos);
+    ofs.sub(pos);
+    this.angle = ofs.heading();
+    this.speed = random.get(0.01, 0.03);
+  }
+
+  update() {
+    const sx = this.pos.x * scrollScreenSizeX - scrollOffsetX;
+    const sy = this.pos.y * screenSize.y;
+    if (sx < scrollScreenSizeX * -0.1 || sx > scrollScreenSizeX * 1.1 ||
+      this.pos.y < -0.1 || this.pos.y > 1.1) {
+      this.remove();
+    }
+    p.rect(sx - 1.5, sy - 1.5, 3, 3);
+    super.update();
+  }
 }
