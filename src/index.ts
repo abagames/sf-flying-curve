@@ -199,9 +199,9 @@ class FlyingCurve {
     this.steps = _.times(sc, () => {
       const step = new Step();
       step.curve.type = getRandomEnum(CurveType);
-      step.curve.angleSpeed = get2DRandom(0.02, 0.2);
+      step.curve.angleSpeed = get2DRandom(0.01, 0.15);
       step.curve.width = get2DRandom(0.1, 0.5);
-      step.ySpeed = get2DRandom(0.01, 0.02);
+      step.ySpeed = get2DRandom(0.005, 0.015);
       step.trigger.type = getRandomEnum(TriggerType, 1);
       step.trigger.isReverseYWay = random.get() < 0.5;
       step.isFiring = random.get() < 0.75;
@@ -261,7 +261,7 @@ class Bullet extends Actor {
     ofs.set(player.pos);
     ofs.sub(pos);
     this.angle = ofs.heading();
-    this.speed = random.get(0.01, 0.03);
+    this.speed = get2DRandom(0.01, 0.025);
   }
 
   update() {
