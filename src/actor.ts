@@ -6,7 +6,7 @@ export default class Actor {
   pos: p5.Vector = new p5.Vector();
   vel: p5.Vector = new p5.Vector();
   angle = 0;
-  speed = 1;
+  speed = 0;
   isAlive = true;
   priority = 1;
   ticks = 0;
@@ -16,6 +16,9 @@ export default class Actor {
   }
 
   update() {
+    this.pos.add(this.vel);
+    this.pos.x += Math.cos(this.angle) * this.speed;
+    this.pos.y += Math.sin(this.angle) * this.speed;
     this.ticks++;
   }
 
