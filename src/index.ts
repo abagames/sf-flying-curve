@@ -123,7 +123,7 @@ class Enemy extends Actor {
   sineCenterX: number;
   yWay = 1;
   firingTicks: number;
-  firingInterval = 60;
+  firingInterval: number;
   normalizedPos: p5.Vector = new p5.Vector();
 
   spawn() {
@@ -145,6 +145,7 @@ class Enemy extends Actor {
         break;
     }
     this.normalizedPos.y = -0.04;
+    this.firingInterval = 120 / Math.sqrt(loop.ticks * 0.01 + 1);
     this.firingTicks = random.getInt(this.firingInterval);
     this.collision.set(8, 8);
     this.goToNextStep();
@@ -323,7 +324,7 @@ class Bullet extends Actor {
     ofs.set(player.normalizedPos);
     ofs.sub(pos);
     this.normalizedAngle = ofs.heading();
-    this.normalizedSpeed = get2DRandom(0.01, 0.025);
+    this.normalizedSpeed = get2DRandom(0.01, Math.sqrt(loop.ticks * 0.005 + 1) * 0.01);
   }
 
   update() {
