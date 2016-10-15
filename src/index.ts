@@ -28,6 +28,7 @@ function init() {
   p.noStroke();
   loop.enableDebug(() => {
     player.setPixels();
+    Shot.pixels = null;
     Bullet.pixels = null;
   });
   player = new Player();
@@ -37,7 +38,7 @@ function update() {
   if (loop.ticks % 200 === 0) {
     flyingCurve = new FlyingCurve();
   }
-  if (loop.ticks % 20 === 0) {
+  if (loop.ticks % 200 < 120 && loop.ticks % 12 === 0) {
     const e = new Enemy();
     e.flyingCurve = flyingCurve;
     e.spawn();
@@ -46,7 +47,7 @@ function update() {
 
 class Player extends Actor {
   normalizedPos: p5.Vector = new p5.Vector();
-  fireInterval = 10;
+  fireInterval = 5;
   fireTicks = 0;
 
   constructor() {
@@ -95,7 +96,7 @@ class Shot extends Actor {
   }
 
   update() {
-    this.normalizedPos.y -= 0.03;
+    this.normalizedPos.y -= 0.04;
     setPosFromNormalizedPos(this);
     _.forEach(this.testCollision('Enemy'), a => {
       this.remove();
@@ -327,8 +328,8 @@ class Bullet extends Actor {
 function setPosFromNormalizedPos(actor) {
   actor.pos.x = actor.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
   actor.pos.y = actor.normalizedPos.y * screenSize.y;
-  if (actor.pos.x < scrollScreenSizeX * -0.1 || actor.pos.x > scrollScreenSizeX * 1.1 ||
-    actor.normalizedPos.y < -0.1 || actor.normalizedPos.y > 1.1) {
+  if (actor.pos.x < scrollScreenSizeX * -0.06 || actor.pos.x > scrollScreenSizeX * 1.06 ||
+    actor.normalizedPos.y < -0.06 || actor.normalizedPos.y > 1.06) {
     actor.remove();
   }
 }
