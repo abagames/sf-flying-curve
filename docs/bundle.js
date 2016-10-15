@@ -45,12 +45,12 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(1);
-	__webpack_require__(5);
-	__webpack_require__(6);
 	__webpack_require__(7);
 	__webpack_require__(8);
-	__webpack_require__(12);
-	module.exports = __webpack_require__(10);
+	__webpack_require__(5);
+	__webpack_require__(9);
+	__webpack_require__(13);
+	module.exports = __webpack_require__(11);
 
 
 /***/ },
@@ -59,11 +59,15 @@
 
 	"use strict";
 	var _ = __webpack_require__(2);
-	exports.p5 = __webpack_require__(4);
+	var pag = __webpack_require__(4);
+	var loop = __webpack_require__(5);
+	var p5 = loop.p5;
+	var p;
+	var rotationNum = 16;
 	var Actor = (function () {
 	    function Actor() {
-	        this.pos = new exports.p5.Vector();
-	        this.vel = new exports.p5.Vector();
+	        this.pos = new p5.Vector();
+	        this.vel = new p5.Vector();
 	        this.angle = 0;
 	        this.speed = 0;
 	        this.isAlive = true;
@@ -75,10 +79,41 @@
 	        this.pos.add(this.vel);
 	        this.pos.x += Math.cos(this.angle) * this.speed;
 	        this.pos.y += Math.sin(this.angle) * this.speed;
+	        if (this.pixels != null) {
+	            this.drawPixels();
+	        }
 	        this.ticks++;
 	    };
 	    Actor.prototype.remove = function () {
 	        this.isAlive = false;
+	    };
+	    Actor.prototype.drawPixels = function () {
+	        var a = this.angle;
+	        if (a < 0) {
+	            a = Math.PI * 2 - Math.abs(a % (Math.PI * 2));
+	        }
+	        var pxs = this.pixels[Math.round(a / (Math.PI * 2 / rotationNum)) % rotationNum];
+	        var pw = pxs.length;
+	        var ph = pxs[0].length;
+	        var sbx = p.floor(this.pos.x - pw / 2);
+	        var sby = p.floor(this.pos.y - ph / 2);
+	        p.noStroke();
+	        for (var y = 0, sy = sby; y < ph; y++, sy++) {
+	            for (var x = 0, sx = sbx; x < pw; x++, sx++) {
+	                var px = pxs[x][y];
+	                if (!px.isEmpty) {
+	                    p.fill(px.style);
+	                    p.rect(sx, sy, 1, 1);
+	                }
+	            }
+	        }
+	    };
+	    Actor.init = function () {
+	        p = loop.p;
+	        pag.defaultOptions.isMirrorY = true;
+	        pag.defaultOptions.rotationNum = rotationNum;
+	        pag.defaultOptions.scale = 2;
+	        Actor.clear();
 	    };
 	    Actor.add = function (actor) {
 	        Actor.actors.push(actor);
@@ -99,6 +134,10 @@
 	                i++;
 	            }
 	        }
+	    };
+	    Actor.generatePixels = function (pattern, options) {
+	        if (options === void 0) { options = {}; }
+	        return pag.generate(pattern, options);
 	    };
 	    return Actor;
 	}());
@@ -17113,6 +17152,461 @@
 
 /***/ },
 /* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function webpackUniversalModuleDefinition(root, factory) {
+		if(true)
+			module.exports = factory();
+		else if(typeof define === 'function' && define.amd)
+			define([], factory);
+		else if(typeof exports === 'object')
+			exports["pag"] = factory();
+		else
+			root["pag"] = factory();
+	})(this, function() {
+	return /******/ (function(modules) { // webpackBootstrap
+	/******/ 	// The module cache
+	/******/ 	var installedModules = {};
+	
+	/******/ 	// The require function
+	/******/ 	function __webpack_require__(moduleId) {
+	
+	/******/ 		// Check if module is in cache
+	/******/ 		if(installedModules[moduleId])
+	/******/ 			return installedModules[moduleId].exports;
+	
+	/******/ 		// Create a new module (and put it into the cache)
+	/******/ 		var module = installedModules[moduleId] = {
+	/******/ 			exports: {},
+	/******/ 			id: moduleId,
+	/******/ 			loaded: false
+	/******/ 		};
+	
+	/******/ 		// Execute the module function
+	/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+	
+	/******/ 		// Flag the module as loaded
+	/******/ 		module.loaded = true;
+	
+	/******/ 		// Return the exports of the module
+	/******/ 		return module.exports;
+	/******/ 	}
+	
+	
+	/******/ 	// expose the modules object (__webpack_modules__)
+	/******/ 	__webpack_require__.m = modules;
+	
+	/******/ 	// expose the module cache
+	/******/ 	__webpack_require__.c = installedModules;
+	
+	/******/ 	// __webpack_public_path__
+	/******/ 	__webpack_require__.p = "";
+	
+	/******/ 	// Load entry module and return exports
+	/******/ 	return __webpack_require__(0);
+	/******/ })
+	/************************************************************************/
+	/******/ ([
+	/* 0 */
+	/***/ function(module, exports, __webpack_require__) {
+	
+		module.exports = __webpack_require__(3);
+	
+	
+	/***/ },
+	/* 1 */,
+	/* 2 */,
+	/* 3 */
+	/***/ function(module, exports) {
+	
+		"use strict";
+		exports.defaultOptions = {
+		    isMirrorX: false,
+		    isMirrorY: false,
+		    seed: 0,
+		    hue: null,
+		    saturation: 0.8,
+		    value: 1,
+		    rotationNum: 1,
+		    scale: 1,
+		    scaleX: null,
+		    scaleY: null,
+		    colorNoise: 0.1,
+		    colorLighting: 1,
+		    edgeDarkness: 0.4,
+		    isShowingEdge: true,
+		    isShowingBody: true,
+		};
+		var generatedPixels = {};
+		var seed = 0;
+		function setSeed(_seed) {
+		    if (_seed === void 0) { _seed = 0; }
+		    seed = _seed;
+		}
+		exports.setSeed = setSeed;
+		function generate(patterns, _options) {
+		    if (_options === void 0) { _options = {}; }
+		    _options.baseSeed = seed;
+		    var jso = JSON.stringify({ patterns: patterns, options: _options });
+		    if (generatedPixels[jso]) {
+		        return generatedPixels[jso];
+		    }
+		    var options = {};
+		    forOwn(exports.defaultOptions, function (v, k) {
+		        options[k] = v;
+		    });
+		    forOwn(_options, function (v, k) {
+		        options[k] = v;
+		    });
+		    var random = new Random();
+		    var rndSeed = seed + getHashFromString(patterns.join());
+		    if (options.seed != null) {
+		        rndSeed += options.seed;
+		    }
+		    random.setSeed(rndSeed);
+		    if (options.hue == null) {
+		        options.hue = random.get01();
+		    }
+		    if (options.scaleX == null) {
+		        options.scaleX = options.scale;
+		    }
+		    if (options.scaleY == null) {
+		        options.scaleY = options.scale;
+		    }
+		    var pixels = generatePixels(patterns, options, random);
+		    var result;
+		    if (options.rotationNum > 1) {
+		        result = map(createRotated(pixels, options.rotationNum), function (p) {
+		            return createColored(p, options);
+		        });
+		    }
+		    else {
+		        result = [createColored(pixels, options)];
+		    }
+		    generatedPixels[jso] = result;
+		    return result;
+		}
+		exports.generate = generate;
+		var Pixel = (function () {
+		    function Pixel() {
+		        this.r = 0;
+		        this.g = 0;
+		        this.b = 0;
+		        this.isEmpty = true;
+		    }
+		    Pixel.prototype.setFromHsv = function (hue, saturation, value) {
+		        this.isEmpty = false;
+		        this.r = value;
+		        this.g = value;
+		        this.b = value;
+		        var h = hue * 6;
+		        var i = Math.floor(h);
+		        var f = h - i;
+		        switch (i) {
+		            case 0:
+		                this.g *= 1 - saturation * (1 - f);
+		                this.b *= 1 - saturation;
+		                break;
+		            case 1:
+		                this.b *= 1 - saturation;
+		                this.r *= 1 - saturation * f;
+		                break;
+		            case 2:
+		                this.b *= 1 - saturation * (1 - f);
+		                this.r *= 1 - saturation;
+		                break;
+		            case 3:
+		                this.r *= 1 - saturation;
+		                this.g *= 1 - saturation * f;
+		                break;
+		            case 4:
+		                this.r *= 1 - saturation * (1 - f);
+		                this.g *= 1 - saturation;
+		                break;
+		            case 5:
+		                this.g *= 1 - saturation;
+		                this.b *= 1 - saturation * f;
+		                break;
+		        }
+		        this.setStyle();
+		    };
+		    Pixel.prototype.setStyle = function () {
+		        var r = Math.floor(this.r * 255);
+		        var g = Math.floor(this.g * 255);
+		        var b = Math.floor(this.b * 255);
+		        this.style = "rgb(" + r + "," + g + "," + b + ")";
+		    };
+		    return Pixel;
+		}());
+		exports.Pixel = Pixel;
+		function generatePixels(patterns, options, random) {
+		    var pw = reduce(patterns, function (w, p) { return Math.max(w, p.length); }, 0);
+		    var ph = patterns.length;
+		    var w = Math.round(pw * options.scaleX);
+		    var h = Math.round(ph * options.scaleY);
+		    w += options.isMirrorX ? 1 : 2;
+		    h += options.isMirrorY ? 1 : 2;
+		    var pixels = createPixels(patterns, pw, ph, w, h, options.scaleX, options.scaleY, random);
+		    if (options.isMirrorX) {
+		        pixels = mirrorX(pixels, w, h);
+		        w *= 2;
+		    }
+		    if (options.isMirrorY) {
+		        pixels = mirrorY(pixels, w, h);
+		        h *= 2;
+		    }
+		    pixels = createEdge(pixels, w, h);
+		    return pixels;
+		}
+		function createPixels(patterns, pw, ph, w, h, scaleX, scaleY, random) {
+		    return timesMap(w, function (x) {
+		        var px = Math.floor((x - 1) / scaleX);
+		        return timesMap(h, function (y) {
+		            var py = Math.floor((y - 1) / scaleY);
+		            if (px < 0 || px >= pw || py < 0 || py >= ph) {
+		                return 0;
+		            }
+		            var c = px < patterns[py].length ? patterns[py][px] : ' ';
+		            var m = 0;
+		            if (c === '-') {
+		                m = random.get01() < 0.5 ? 1 : 0;
+		            }
+		            else if (c === 'x' || c === 'X') {
+		                m = random.get01() < 0.5 ? 1 : -1;
+		            }
+		            else if (c === 'o' || c === 'O') {
+		                m = -1;
+		            }
+		            else if (c === '*') {
+		                m = 1;
+		            }
+		            return m;
+		        });
+		    });
+		}
+		function mirrorX(pixels, w, h) {
+		    return timesMap(w * 2, function (x) { return timesMap(h, function (y) {
+		        return x < w ? pixels[x][y] : pixels[w * 2 - x - 1][y];
+		    }); });
+		}
+		function mirrorY(pixels, w, h) {
+		    return timesMap(w, function (x) { return timesMap(h * 2, function (y) {
+		        return y < h ? pixels[x][y] : pixels[x][h * 2 - y - 1];
+		    }); });
+		}
+		function createEdge(pixels, w, h) {
+		    return timesMap(w, function (x) { return timesMap(h, function (y) {
+		        return ((pixels[x][y] === 0 &&
+		            ((x - 1 >= 0 && pixels[x - 1][y] > 0) ||
+		                (x + 1 < w && pixels[x + 1][y] > 0) ||
+		                (y - 1 >= 0 && pixels[x][y - 1] > 0) ||
+		                (y + 1 < h && pixels[x][y + 1] > 0))) ?
+		            -1 : pixels[x][y]);
+		    }); });
+		}
+		function createRotated(pixels, rotationNum) {
+		    var pw = pixels.length;
+		    var ph = pixels[0].length;
+		    var pcx = pw / 2;
+		    var pcy = ph / 2;
+		    var w = Math.round(pw * 1.5 / 2) * 2;
+		    var h = Math.round(ph * 1.5 / 2) * 2;
+		    var cx = w / 2;
+		    var cy = h / 2;
+		    var offset = { x: 0, y: 0 };
+		    return timesMap(rotationNum, function (ai) {
+		        var angle = -ai * Math.PI * 2 / rotationNum;
+		        return timesMap(w, function (x) { return timesMap(h, function (y) {
+		            offset.x = x - cx;
+		            offset.y = y - cy;
+		            rotateVector(offset, angle);
+		            var px = Math.round(offset.x + pcx);
+		            var py = Math.round(offset.y + pcy);
+		            return (px < 0 || px >= pw || py < 0 || py >= ph) ?
+		                0 : pixels[px][py];
+		        }); });
+		    });
+		}
+		function rotateVector(v, angle) {
+		    var vx = v.x;
+		    v.x = Math.cos(angle) * vx - Math.sin(angle) * v.y;
+		    v.y = Math.sin(angle) * vx + Math.cos(angle) * v.y;
+		}
+		function createColored(pixels, options) {
+		    var w = pixels.length;
+		    var h = pixels[0].length;
+		    var random = new Random();
+		    random.setSeed(options.seed);
+		    return timesMap(w, function (x) { return timesMap(h, function (y) {
+		        var p = pixels[x][y];
+		        if ((p === 1 && !options.isShowingBody) ||
+		            (p === -1 && !options.isShowingEdge)) {
+		            return new Pixel();
+		        }
+		        if (p !== 0) {
+		            var l = Math.sin(y / h * Math.PI) * options.colorLighting +
+		                (1 - options.colorLighting);
+		            var v = (l * (1 - options.colorNoise) +
+		                random.get01() * options.colorNoise) * options.value;
+		            v = v >= 0 ? (v <= 1 ? v : 1) : 0;
+		            if (p === -1) {
+		                v *= (1 - options.edgeDarkness);
+		            }
+		            var px = new Pixel();
+		            px.setFromHsv(options.hue, options.saturation, v);
+		            return px;
+		        }
+		        else {
+		            return new Pixel();
+		        }
+		    }); });
+		}
+		function getHashFromString(str) {
+		    var hash = 0;
+		    var len = str.length;
+		    for (var i = 0; i < len; i++) {
+		        var chr = str.charCodeAt(i);
+		        hash = ((hash << 5) - hash) + chr;
+		        hash |= 0;
+		    }
+		    return hash;
+		}
+		function nArray(n, v) {
+		    var a = [];
+		    for (var i = 0; i < n; i++) {
+		        a.push(v);
+		    }
+		    return a;
+		}
+		function times(n, func) {
+		    for (var i = 0; i < n; i++) {
+		        func(i);
+		    }
+		}
+		function timesMap(n, func) {
+		    var result = [];
+		    for (var i = 0; i < n; i++) {
+		        result.push(func(i));
+		    }
+		    return result;
+		}
+		function forEach(array, func) {
+		    for (var i = 0; i < array.length; i++) {
+		        func(array[i]);
+		    }
+		}
+		function forOwn(obj, func) {
+		    for (var p in obj) {
+		        func(obj[p], p);
+		    }
+		}
+		function map(array, func) {
+		    var result = [];
+		    for (var i = 0; i < array.length; i++) {
+		        result.push(func(array[i], i));
+		    }
+		    return result;
+		}
+		function reduce(array, func, initValue) {
+		    var result = initValue;
+		    for (var i = 0; i < array.length; i++) {
+		        result = func(result, array[i], i);
+		    }
+		    return result;
+		}
+		var Random = (function () {
+		    function Random() {
+		        this.setSeed();
+		        this.get01 = this.get01.bind(this);
+		    }
+		    Random.prototype.setSeed = function (v) {
+		        if (v === void 0) { v = -0x7fffffff; }
+		        if (v === -0x7fffffff) {
+		            v = Math.floor(Math.random() * 0x7fffffff);
+		        }
+		        this.x = v = 1812433253 * (v ^ (v >> 30));
+		        this.y = v = 1812433253 * (v ^ (v >> 30)) + 1;
+		        this.z = v = 1812433253 * (v ^ (v >> 30)) + 2;
+		        this.w = v = 1812433253 * (v ^ (v >> 30)) + 3;
+		        return this;
+		    };
+		    Random.prototype.getInt = function () {
+		        var t = this.x ^ (this.x << 11);
+		        this.x = this.y;
+		        this.y = this.z;
+		        this.z = this.w;
+		        this.w = (this.w ^ (this.w >> 19)) ^ (t ^ (t >> 8));
+		        return this.w;
+		    };
+		    Random.prototype.get01 = function () {
+		        return this.getInt() / 0x7fffffff;
+		    };
+		    return Random;
+		}());
+	
+	
+	/***/ }
+	/******/ ])
+	});
+	;
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var actor_1 = __webpack_require__(1);
+	var debug = __webpack_require__(7);
+	var pag = __webpack_require__(4);
+	exports.p5 = __webpack_require__(6);
+	exports.options = {
+	    backgroundColor: 0
+	};
+	exports.ticks = 0;
+	var initFunc;
+	var updateFunc;
+	var onSeedChangedFunc;
+	function init(_initFunc, _updateFunc) {
+	    initFunc = _initFunc;
+	    updateFunc = _updateFunc;
+	    new exports.p5(function (_p) {
+	        exports.p = _p;
+	        exports.p.setup = setup;
+	        exports.p.draw = draw;
+	    });
+	}
+	exports.init = init;
+	function enableDebug(onSeedChanged) {
+	    if (onSeedChanged === void 0) { onSeedChanged = null; }
+	    onSeedChangedFunc = onSeedChanged;
+	    debug.initSeedUi(sestSeeds);
+	}
+	exports.enableDebug = enableDebug;
+	function setup() {
+	    actor_1.default.init();
+	    initFunc();
+	}
+	function draw() {
+	    exports.p.background(exports.options.backgroundColor);
+	    updateFunc();
+	    actor_1.default.update();
+	    exports.ticks++;
+	}
+	function sestSeeds(seed) {
+	    pag.setSeed(seed);
+	    /*sss.reset();
+	    sss.setSeed(seed);
+	    ppe.setSeed(seed);
+	    ppe.reset();
+	    if (scene === Scene.game) {
+	      sss.playBgm();
+	    }*/
+	    onSeedChangedFunc();
+	}
+
+
+/***/ },
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var require;var require;/*! p5.js v0.5.4 October 01, 2016 */
@@ -50146,7 +50640,7 @@
 	});
 
 /***/ },
-/* 5 */
+/* 7 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -50182,7 +50676,7 @@
 
 
 /***/ },
-/* 6 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -50192,10 +50686,10 @@
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
 	var _ = __webpack_require__(2);
-	var loop = __webpack_require__(7);
+	var loop = __webpack_require__(5);
 	var actor_1 = __webpack_require__(1);
-	var random_1 = __webpack_require__(8);
-	var ui = __webpack_require__(10);
+	var random_1 = __webpack_require__(9);
+	var ui = __webpack_require__(11);
 	var p5 = loop.p5;
 	var p;
 	var screenSize;
@@ -50215,6 +50709,10 @@
 	    ui.init(p5Canvas, screenSize);
 	    p.fill(255);
 	    p.noStroke();
+	    loop.enableDebug(function () {
+	        player.setPixels();
+	        Bullet.pixels = null;
+	    });
 	    player = new Player();
 	}
 	function update() {
@@ -50231,17 +50729,22 @@
 	    __extends(Player, _super);
 	    function Player() {
 	        _super.call(this);
-	        this.screenPos = new p5.Vector();
-	        this.screenPos.set(screenSize.x / 2, screenSize.y * 0.8);
-	        ui.setCurrentTargetPos(this.screenPos);
+	        this.normalizedPos = new p5.Vector();
+	        this.pos.set(screenSize.x / 2, screenSize.y * 0.8);
+	        ui.setCurrentTargetPos(this.pos);
+	        this.setPixels();
+	        this.angle = -p.HALF_PI;
 	    }
+	    Player.prototype.setPixels = function () {
+	        this.pixels = actor_1.default.generatePixels([' x', 'xxxx']);
+	    };
 	    Player.prototype.update = function () {
-	        this.screenPos.set(ui.targetPos);
-	        this.screenPos.set(p.constrain(this.screenPos.x, 0, screenSize.x), p.constrain(this.screenPos.y, 0, screenSize.y));
+	        this.pos.set(ui.targetPos);
+	        this.pos.set(p.constrain(this.pos.x, 0, screenSize.x), p.constrain(this.pos.y, 0, screenSize.y));
 	        scrollOffsetX =
-	            (this.screenPos.x / screenSize.x) * (scrollScreenSizeX - screenSize.x);
-	        this.pos.set(this.screenPos.x / screenSize.x, this.screenPos.y / screenSize.y);
-	        p.rect(this.screenPos.x - 2.5, this.screenPos.y - 2.5, 5, 5);
+	            (this.pos.x / screenSize.x) * (scrollScreenSizeX - screenSize.x);
+	        this.normalizedPos.set(this.pos.x / screenSize.x, this.pos.y / screenSize.y);
+	        //p.rect(this.screenPos.x - 2.5, this.screenPos.y - 2.5, 5, 5);
 	        _super.prototype.update.call(this);
 	    };
 	    return Player;
@@ -50253,21 +50756,24 @@
 	        this.stepIndex = -1;
 	        this.yWay = 1;
 	        this.firingInterval = 60;
+	        this.normalizedPos = new p5.Vector();
 	    }
 	    Enemy.prototype.spawn = function () {
+	        this.pixels = this.flyingCurve.pixels;
+	        this.angle = p.HALF_PI;
 	        switch (this.flyingCurve.spawnType) {
 	            case SpawnType.random:
-	                this.pos.x = random.get();
-	                this.pos.y = -0.05;
+	                this.normalizedPos.x = random.get();
+	                this.normalizedPos.y = -0.05;
 	                this.sineAngle = random.get() < 0.5 ? -p.PI / 2 : p.PI / 2;
 	                break;
 	            case SpawnType.oppositeX:
-	                if (player.pos.x > 0.5) {
-	                    this.pos.x = 0.25;
+	                if (player.normalizedPos.x > 0.5) {
+	                    this.normalizedPos.x = 0.25;
 	                    this.sineAngle = -p.PI / 2;
 	                }
 	                else {
-	                    this.pos.x = 0.75;
+	                    this.normalizedPos.x = 0.75;
 	                    this.sineAngle = p.PI / 2;
 	                }
 	                break;
@@ -50282,19 +50788,19 @@
 	        switch (step.curve.type) {
 	            case CurveType.sine:
 	                var w = p.sin(this.sineAngle) * step.curve.width;
-	                this.sineCenterX = this.pos.x - w;
+	                this.sineCenterX = this.normalizedPos.x - w;
 	                break;
 	            case CurveType.aimX:
 	            case CurveType.opposite:
-	                t = this.yWay > 0 ? (1 - this.pos.y) / step.ySpeed : this.pos.y / step.ySpeed;
+	                t = this.yWay > 0 ? (1 - this.normalizedPos.y) / step.ySpeed : this.normalizedPos.y / step.ySpeed;
 	                t = p.constrain(t, 1, 9999999);
-	                var ax = step.curve.type === CurveType.aimX ? player.pos.x :
-	                    (this.pos.x < 0.5 ? 0.75 : 0.25);
-	                this.vel.x = (ax - this.pos.x) / t;
+	                var ax = step.curve.type === CurveType.aimX ? player.normalizedPos.x :
+	                    (this.normalizedPos.x < 0.5 ? 0.75 : 0.25);
+	                this.vel.x = (ax - this.normalizedPos.x) / t;
 	                break;
 	            case CurveType.aim:
-	                var ox = player.pos.x - this.pos.x;
-	                var oy = player.pos.y - this.pos.y;
+	                var ox = player.normalizedPos.x - this.normalizedPos.x;
+	                var oy = player.normalizedPos.y - this.normalizedPos.y;
 	                t = p.mag(ox, oy) / step.ySpeed;
 	                t = p.constrain(t, 1, 9999999);
 	                this.vel.set(ox, oy);
@@ -50306,35 +50812,35 @@
 	        var step = this.flyingCurve.steps[this.stepIndex];
 	        switch (step.curve.type) {
 	            case CurveType.sine:
-	                this.pos.x = p.sin(this.sineAngle) * step.curve.width + this.sineCenterX;
+	                this.normalizedPos.x = p.sin(this.sineAngle) * step.curve.width + this.sineCenterX;
 	                this.sineAngle += step.curve.angleSpeed * this.flyingCurve.velScale.x;
 	                break;
 	            case CurveType.aimX:
 	            case CurveType.opposite:
-	                this.pos.x += this.vel.x * this.flyingCurve.velScale.x;
+	                this.normalizedPos.x += this.vel.x * this.flyingCurve.velScale.x;
 	                break;
 	            case CurveType.aim:
-	                this.pos.x += this.vel.x * this.flyingCurve.velScale.x;
-	                this.pos.y += this.vel.y * this.flyingCurve.velScale.y;
+	                this.normalizedPos.x += this.vel.x * this.flyingCurve.velScale.x;
+	                this.normalizedPos.y += this.vel.y * this.flyingCurve.velScale.y;
 	                break;
 	        }
 	        if (step.curve.type !== CurveType.aim) {
-	            this.pos.y += step.ySpeed * this.yWay * this.flyingCurve.velScale.y;
+	            this.normalizedPos.y += step.ySpeed * this.yWay * this.flyingCurve.velScale.y;
 	        }
 	        if (step.isFiring) {
 	            this.firingTicks--;
 	            if (this.firingTicks <= 0) {
-	                new Bullet(this.pos);
+	                new Bullet(this.normalizedPos);
 	                this.firingTicks = this.firingInterval;
 	            }
 	        }
-	        var sx = this.pos.x * scrollScreenSizeX - scrollOffsetX;
-	        var sy = this.pos.y * screenSize.y;
-	        if (sx < scrollScreenSizeX * -0.1 || sx > scrollScreenSizeX * 1.1 ||
-	            this.pos.y < -0.1 || this.pos.y > 1.1) {
+	        this.pos.x = this.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
+	        this.pos.y = this.normalizedPos.y * screenSize.y;
+	        if (this.pos.x < scrollScreenSizeX * -0.1 || this.pos.x > scrollScreenSizeX * 1.1 ||
+	            this.normalizedPos.y < -0.1 || this.normalizedPos.y > 1.1) {
 	            this.remove();
 	        }
-	        p.rect(sx - 2.5, sy - 2.5, 5, 5);
+	        p.rect(this.pos.x - 2.5, this.pos.y - 2.5, 5, 5);
 	        this.checkTrigger();
 	        _super.prototype.update.call(this);
 	    };
@@ -50343,13 +50849,14 @@
 	        var isFired = false;
 	        switch (trigger.type) {
 	            case TriggerType.crossHalf:
-	                isFired = (this.pos.y - 0.5) * this.yWay > 0;
+	                isFired = (this.normalizedPos.y - 0.5) * this.yWay > 0;
 	                break;
 	            case TriggerType.crossPlayer:
-	                isFired = (this.pos.y - player.pos.y) * this.yWay > 0;
+	                isFired = (this.normalizedPos.y - player.normalizedPos.y) * this.yWay > 0;
 	                break;
 	            case TriggerType.hitTopBottom:
-	                isFired = (this.yWay > 0 && this.pos.y > 1) || (this.yWay < 0 && this.pos.y < 0);
+	                isFired = (this.yWay > 0 && this.normalizedPos.y > 1) ||
+	                    (this.yWay < 0 && this.normalizedPos.y < 0);
 	                break;
 	        }
 	        if (isFired) {
@@ -50365,6 +50872,7 @@
 	    function FlyingCurve() {
 	        this.velScale = new p5.Vector(1, 1);
 	        this.generate();
+	        this.pixels = actor_1.default.generatePixels([' --', '-xx-'], { seed: random.getToMaxInt(), hue: 0.2 });
 	    }
 	    FlyingCurve.prototype.generate = function () {
 	        this.steps = [];
@@ -50437,21 +50945,29 @@
 	    __extends(Bullet, _super);
 	    function Bullet(pos) {
 	        _super.call(this);
-	        this.pos.set(pos);
+	        this.normalizedPos = new p5.Vector();
+	        if (Bullet.pixels == null) {
+	            Bullet.pixels = actor_1.default.generatePixels([' x', 'xx'], { scale: 1, hue: 0.1, isMirrorX: true });
+	        }
+	        this.pixels = Bullet.pixels;
+	        this.normalizedPos.set(pos);
 	        var ofs = new p5.Vector();
-	        ofs.set(player.pos);
+	        ofs.set(player.normalizedPos);
 	        ofs.sub(pos);
-	        this.angle = ofs.heading();
-	        this.speed = get2DRandom(0.01, 0.025);
+	        this.normalizedAngle = ofs.heading();
+	        this.normalizedSpeed = get2DRandom(0.01, 0.025);
 	    }
 	    Bullet.prototype.update = function () {
-	        var sx = this.pos.x * scrollScreenSizeX - scrollOffsetX;
-	        var sy = this.pos.y * screenSize.y;
-	        if (sx < scrollScreenSizeX * -0.1 || sx > scrollScreenSizeX * 1.1 ||
-	            this.pos.y < -0.1 || this.pos.y > 1.1) {
+	        this.normalizedPos.x += Math.cos(this.normalizedAngle) * this.normalizedSpeed;
+	        this.normalizedPos.y += Math.sin(this.normalizedAngle) * this.normalizedSpeed;
+	        this.pos.x = this.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
+	        this.pos.y = this.normalizedPos.y * screenSize.y;
+	        if (this.pos.x < scrollScreenSizeX * -0.1 || this.pos.x > scrollScreenSizeX * 1.1 ||
+	            this.normalizedPos.y < -0.1 || this.normalizedPos.y > 1.1) {
 	            this.remove();
 	        }
-	        p.rect(sx - 1.5, sy - 1.5, 3, 3);
+	        this.angle += 0.1;
+	        //p.rect(this.pos.x - 1.5, this.pos.y - 1.5, 3, 3);
 	        _super.prototype.update.call(this);
 	    };
 	    return Bullet;
@@ -50459,46 +50975,11 @@
 
 
 /***/ },
-/* 7 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var actor_1 = __webpack_require__(1);
-	exports.p5 = __webpack_require__(4);
-	exports.options = {
-	    backgroundColor: 0
-	};
-	exports.ticks = 0;
-	var initFunc;
-	var updateFunc;
-	function init(_initFunc, _updateFunc) {
-	    initFunc = _initFunc;
-	    updateFunc = _updateFunc;
-	    actor_1.default.clear();
-	    new exports.p5(function (_p) {
-	        exports.p = _p;
-	        exports.p.setup = setup;
-	        exports.p.draw = draw;
-	    });
-	}
-	exports.init = init;
-	function setup() {
-	    initFunc();
-	}
-	function draw() {
-	    exports.p.background(exports.options.backgroundColor);
-	    updateFunc();
-	    actor_1.default.update();
-	    exports.ticks++;
-	}
-
-
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var ir = __webpack_require__(9);
+	var ir = __webpack_require__(10);
 	var Random = (function () {
 	    function Random() {
 	        this.propNames = ['x', 'y', 'z', 'w'];
@@ -50550,7 +51031,7 @@
 
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function webpackUniversalModuleDefinition(root, factory) {
@@ -51267,12 +51748,12 @@
 	;
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var sss = __webpack_require__(11);
-	var loop = __webpack_require__(7);
+	var sss = __webpack_require__(12);
+	var loop = __webpack_require__(5);
 	var p5 = loop.p5;
 	var p;
 	exports.cursorPos = new p5.Vector();
@@ -51338,7 +51819,7 @@
 
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function webpackUniversalModuleDefinition(root, factory) {
@@ -52944,7 +53425,7 @@
 	;
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports) {
 
 	"use strict";

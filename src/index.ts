@@ -26,6 +26,10 @@ function init() {
   ui.init(p5Canvas, screenSize);
   p.fill(255);
   p.noStroke();
+  loop.enableDebug(() => {
+    player.setPixels();
+    Bullet.pixels = null;
+  });
   player = new Player();
 }
 
@@ -41,27 +45,30 @@ function update() {
 }
 
 class Player extends Actor {
-  screenPos: p5.Vector = new p5.Vector();
+  normalizedPos: p5.Vector = new p5.Vector();
 
   constructor() {
     super();
-    this.screenPos.set(screenSize.x / 2, screenSize.y * 0.8);
-    ui.setCurrentTargetPos(this.screenPos);
+    this.pos.set(screenSize.x / 2, screenSize.y * 0.8);
+    ui.setCurrentTargetPos(this.pos);
+    this.setPixels();
+    this.angle = -p.HALF_PI;
+  }
+
+  setPixels() {
+    this.pixels = Actor.generatePixels([' x', 'xxxx']);
   }
 
   update() {
-    this.screenPos.set(ui.targetPos);
-    this.screenPos.set(
-      p.constrain(this.screenPos.x, 0, screenSize.x),
-      p.constrain(this.screenPos.y, 0, screenSize.y)
+    this.pos.set(ui.targetPos);
+    this.pos.set(
+      p.constrain(this.pos.x, 0, screenSize.x),
+      p.constrain(this.pos.y, 0, screenSize.y)
     );
     scrollOffsetX =
-      (this.screenPos.x / screenSize.x) * (scrollScreenSizeX - screenSize.x);
-    this.pos.set(
-      this.screenPos.x / screenSize.x,
-      this.screenPos.y / screenSize.y
-    );
-    p.rect(this.screenPos.x - 2.5, this.screenPos.y - 2.5, 5, 5);
+      (this.pos.x / screenSize.x) * (scrollScreenSizeX - screenSize.x);
+    this.normalizedPos.set(this.pos.x / screenSize.x, this.pos.y / screenSize.y);
+    //p.rect(this.screenPos.x - 2.5, this.screenPos.y - 2.5, 5, 5);
     super.update();
   }
 }
@@ -74,20 +81,23 @@ class Enemy extends Actor {
   yWay = 1;
   firingTicks: number;
   firingInterval = 60;
+  normalizedPos: p5.Vector = new p5.Vector();
 
   spawn() {
+    this.pixels = this.flyingCurve.pixels;
+    this.angle = p.HALF_PI;
     switch (this.flyingCurve.spawnType) {
       case SpawnType.random:
-        this.pos.x = random.get();
-        this.pos.y = -0.05;
+        this.normalizedPos.x = random.get();
+        this.normalizedPos.y = -0.05;
         this.sineAngle = random.get() < 0.5 ? - p.PI / 2 : p.PI / 2;
         break;
       case SpawnType.oppositeX:
-        if (player.pos.x > 0.5) {
-          this.pos.x = 0.25;
+        if (player.normalizedPos.x > 0.5) {
+          this.normalizedPos.x = 0.25;
           this.sineAngle = -p.PI / 2;
         } else {
-          this.pos.x = 0.75;
+          this.normalizedPos.x = 0.75;
           this.sineAngle = p.PI / 2;
         }
         break;
@@ -103,19 +113,19 @@ class Enemy extends Actor {
     switch (step.curve.type) {
       case CurveType.sine:
         const w = p.sin(this.sineAngle) * step.curve.width;
-        this.sineCenterX = this.pos.x - w;
+        this.sineCenterX = this.normalizedPos.x - w;
         break;
       case CurveType.aimX:
       case CurveType.opposite:
-        t = this.yWay > 0 ? (1 - this.pos.y) / step.ySpeed : this.pos.y / step.ySpeed;
+        t = this.yWay > 0 ? (1 - this.normalizedPos.y) / step.ySpeed : this.normalizedPos.y / step.ySpeed;
         t = p.constrain(t, 1, 9999999);
-        let ax = step.curve.type === CurveType.aimX ? player.pos.x :
-          (this.pos.x < 0.5 ? 0.75 : 0.25);
-        this.vel.x = (ax - this.pos.x) / t;
+        let ax = step.curve.type === CurveType.aimX ? player.normalizedPos.x :
+          (this.normalizedPos.x < 0.5 ? 0.75 : 0.25);
+        this.vel.x = (ax - this.normalizedPos.x) / t;
         break;
       case CurveType.aim:
-        const ox = player.pos.x - this.pos.x;
-        const oy = player.pos.y - this.pos.y;
+        const ox = player.normalizedPos.x - this.normalizedPos.x;
+        const oy = player.normalizedPos.y - this.normalizedPos.y;
         t = p.mag(ox, oy) / step.ySpeed;
         t = p.constrain(t, 1, 9999999);
         this.vel.set(ox, oy);
@@ -128,35 +138,35 @@ class Enemy extends Actor {
     const step = this.flyingCurve.steps[this.stepIndex];
     switch (step.curve.type) {
       case CurveType.sine:
-        this.pos.x = p.sin(this.sineAngle) * step.curve.width + this.sineCenterX;
+        this.normalizedPos.x = p.sin(this.sineAngle) * step.curve.width + this.sineCenterX;
         this.sineAngle += step.curve.angleSpeed * this.flyingCurve.velScale.x;
         break;
       case CurveType.aimX:
       case CurveType.opposite:
-        this.pos.x += this.vel.x * this.flyingCurve.velScale.x;
+        this.normalizedPos.x += this.vel.x * this.flyingCurve.velScale.x;
         break;
       case CurveType.aim:
-        this.pos.x += this.vel.x * this.flyingCurve.velScale.x;
-        this.pos.y += this.vel.y * this.flyingCurve.velScale.y;
+        this.normalizedPos.x += this.vel.x * this.flyingCurve.velScale.x;
+        this.normalizedPos.y += this.vel.y * this.flyingCurve.velScale.y;
         break;
     }
     if (step.curve.type !== CurveType.aim) {
-      this.pos.y += step.ySpeed * this.yWay * this.flyingCurve.velScale.y;
+      this.normalizedPos.y += step.ySpeed * this.yWay * this.flyingCurve.velScale.y;
     }
     if (step.isFiring) {
       this.firingTicks--;
       if (this.firingTicks <= 0) {
-        new Bullet(this.pos);
+        new Bullet(this.normalizedPos);
         this.firingTicks = this.firingInterval;
       }
     }
-    const sx = this.pos.x * scrollScreenSizeX - scrollOffsetX;
-    const sy = this.pos.y * screenSize.y;
-    if (sx < scrollScreenSizeX * -0.1 || sx > scrollScreenSizeX * 1.1 ||
-      this.pos.y < -0.1 || this.pos.y > 1.1) {
+    this.pos.x = this.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
+    this.pos.y = this.normalizedPos.y * screenSize.y;
+    if (this.pos.x < scrollScreenSizeX * -0.1 || this.pos.x > scrollScreenSizeX * 1.1 ||
+      this.normalizedPos.y < -0.1 || this.normalizedPos.y > 1.1) {
       this.remove();
     }
-    p.rect(sx - 2.5, sy - 2.5, 5, 5);
+    p.rect(this.pos.x - 2.5, this.pos.y - 2.5, 5, 5);
     this.checkTrigger();
     super.update();
   }
@@ -166,13 +176,14 @@ class Enemy extends Actor {
     let isFired = false;
     switch (trigger.type) {
       case TriggerType.crossHalf:
-        isFired = (this.pos.y - 0.5) * this.yWay > 0;
+        isFired = (this.normalizedPos.y - 0.5) * this.yWay > 0;
         break;
       case TriggerType.crossPlayer:
-        isFired = (this.pos.y - player.pos.y) * this.yWay > 0;
+        isFired = (this.normalizedPos.y - player.normalizedPos.y) * this.yWay > 0;
         break;
       case TriggerType.hitTopBottom:
-        isFired = (this.yWay > 0 && this.pos.y > 1) || (this.yWay < 0 && this.pos.y < 0);
+        isFired = (this.yWay > 0 && this.normalizedPos.y > 1) ||
+          (this.yWay < 0 && this.normalizedPos.y < 0);
         break;
     }
     if (isFired) {
@@ -188,9 +199,12 @@ class FlyingCurve {
   steps: Step[];
   spawnType: SpawnType;
   velScale: p5.Vector = new p5.Vector(1, 1);
+  pixels;
 
   constructor() {
     this.generate();
+    this.pixels = Actor.generatePixels([' --', '-xx-'],
+      { seed: random.getToMaxInt(), hue: 0.2 });
   }
 
   generate() {
@@ -254,24 +268,37 @@ function getRandomEnum(obj, offset = 0) {
 }
 
 class Bullet extends Actor {
+  static pixels;
+  normalizedPos: p5.Vector = new p5.Vector();
+  normalizedAngle: number;
+  normalizedSpeed: number;
+
   constructor(pos: p5.Vector) {
     super();
-    this.pos.set(pos);
+    if (Bullet.pixels == null) {
+      Bullet.pixels = Actor.generatePixels([' x', 'xx'],
+        { scale: 1, hue: 0.1, isMirrorX: true });
+    }
+    this.pixels = Bullet.pixels;
+    this.normalizedPos.set(pos);
     let ofs: p5.Vector = new p5.Vector();
-    ofs.set(player.pos);
+    ofs.set(player.normalizedPos);
     ofs.sub(pos);
-    this.angle = ofs.heading();
-    this.speed = get2DRandom(0.01, 0.025);
+    this.normalizedAngle = ofs.heading();
+    this.normalizedSpeed = get2DRandom(0.01, 0.025);
   }
 
   update() {
-    const sx = this.pos.x * scrollScreenSizeX - scrollOffsetX;
-    const sy = this.pos.y * screenSize.y;
-    if (sx < scrollScreenSizeX * -0.1 || sx > scrollScreenSizeX * 1.1 ||
-      this.pos.y < -0.1 || this.pos.y > 1.1) {
+    this.normalizedPos.x += Math.cos(this.normalizedAngle) * this.normalizedSpeed;
+    this.normalizedPos.y += Math.sin(this.normalizedAngle) * this.normalizedSpeed;
+    this.pos.x = this.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
+    this.pos.y = this.normalizedPos.y * screenSize.y;
+    if (this.pos.x < scrollScreenSizeX * -0.1 || this.pos.x > scrollScreenSizeX * 1.1 ||
+      this.normalizedPos.y < -0.1 || this.normalizedPos.y > 1.1) {
       this.remove();
     }
-    p.rect(sx - 1.5, sy - 1.5, 3, 3);
+    this.angle += 0.1;
+    //p.rect(this.pos.x - 1.5, this.pos.y - 1.5, 3, 3);
     super.update();
   }
 }
