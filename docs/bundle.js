@@ -50723,6 +50723,7 @@
 	    p.noStroke();
 	    loop.enableDebug(function () {
 	        player.setPixels();
+	        Shot.pixels = null;
 	        Bullet.pixels = null;
 	    });
 	    player = new Player();
@@ -50731,7 +50732,7 @@
 	    if (loop.ticks % 200 === 0) {
 	        flyingCurve = new FlyingCurve();
 	    }
-	    if (loop.ticks % 20 === 0) {
+	    if (loop.ticks % 200 < 120 && loop.ticks % 12 === 0) {
 	        var e = new Enemy();
 	        e.flyingCurve = flyingCurve;
 	        e.spawn();
@@ -50742,8 +50743,10 @@
 	    function Player() {
 	        _super.call(this);
 	        this.normalizedPos = new p5.Vector();
-	        this.fireInterval = 10;
+	        this.fireInterval = 5;
 	        this.fireTicks = 0;
+	        this.chaisingSpeed = 2;
+	        this.ofs = new p5.Vector();
 	        this.pos.set(screenSize.x / 2, screenSize.y * 0.8);
 	        ui.setCurrentTargetPos(this.pos);
 	        this.setPixels();
@@ -50753,7 +50756,16 @@
 	        this.pixels = actor_1.default.generatePixels([' x', 'xxxx']);
 	    };
 	    Player.prototype.update = function () {
-	        this.pos.set(ui.targetPos);
+	        this.ofs.set(ui.targetPos);
+	        this.ofs.sub(this.pos);
+	        var d = this.ofs.mag();
+	        if (d <= this.chaisingSpeed) {
+	            this.pos.set(ui.targetPos);
+	        }
+	        else {
+	            this.ofs.div(d / this.chaisingSpeed);
+	            this.pos.add(this.ofs);
+	        }
 	        this.pos.set(p.constrain(this.pos.x, 0, screenSize.x), p.constrain(this.pos.y, 0, screenSize.y));
 	        scrollOffsetX =
 	            (this.pos.x / screenSize.x) * (scrollScreenSizeX - screenSize.x);
@@ -50782,7 +50794,7 @@
 	    }
 	    Shot.prototype.update = function () {
 	        var _this = this;
-	        this.normalizedPos.y -= 0.03;
+	        this.normalizedPos.y -= 0.04;
 	        setPosFromNormalizedPos(this);
 	        _.forEach(this.testCollision('Enemy'), function (a) {
 	            _this.remove();
@@ -51007,8 +51019,8 @@
 	function setPosFromNormalizedPos(actor) {
 	    actor.pos.x = actor.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
 	    actor.pos.y = actor.normalizedPos.y * screenSize.y;
-	    if (actor.pos.x < scrollScreenSizeX * -0.1 || actor.pos.x > scrollScreenSizeX * 1.1 ||
-	        actor.normalizedPos.y < -0.1 || actor.normalizedPos.y > 1.1) {
+	    if (actor.pos.x < scrollScreenSizeX * -0.06 || actor.pos.x > scrollScreenSizeX * 1.06 ||
+	        actor.normalizedPos.y < -0.06 || actor.normalizedPos.y > 1.06) {
 	        actor.remove();
 	    }
 	}

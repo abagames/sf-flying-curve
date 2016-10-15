@@ -49,6 +49,8 @@ class Player extends Actor {
   normalizedPos: p5.Vector = new p5.Vector();
   fireInterval = 5;
   fireTicks = 0;
+  chasingSpeed = 2;
+  ofs: p5.Vector = new p5.Vector();
 
   constructor() {
     super();
@@ -63,7 +65,15 @@ class Player extends Actor {
   }
 
   update() {
-    this.pos.set(ui.targetPos);
+    this.ofs.set(ui.targetPos);
+    this.ofs.sub(this.pos);
+    let d = this.ofs.mag();
+    if (d <= this.chasingSpeed) {
+      this.pos.set(ui.targetPos);
+    } else {
+      this.ofs.div(d / this.chasingSpeed);
+      this.pos.add(this.ofs);
+    }
     this.pos.set(
       p.constrain(this.pos.x, 0, screenSize.x),
       p.constrain(this.pos.y, 0, screenSize.y)
