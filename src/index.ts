@@ -91,11 +91,16 @@ class Shot extends Actor {
     this.pixels = Shot.pixels;
     this.normalizedPos.set(pos);
     this.angle = -p.HALF_PI;
+    this.collision.set(10, 10);
   }
 
   update() {
-    this.normalizedPos.y -= 0.02;
+    this.normalizedPos.y -= 0.03;
     setPosFromNormalizedPos(this);
+    _.forEach(this.testCollision('Enemy'), a => {
+      this.remove();
+      a.remove();
+    });
     super.update();
   }
 }
@@ -130,6 +135,7 @@ class Enemy extends Actor {
         break;
     }
     this.firingTicks = random.getInt(this.firingInterval);
+    this.collision.set(8, 8);
     this.goToNextStep();
   }
 

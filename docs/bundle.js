@@ -73,7 +73,9 @@
 	        this.isAlive = true;
 	        this.priority = 1;
 	        this.ticks = 0;
+	        this.collision = new p5.Vector();
 	        Actor.add(this);
+	        this.type = ('' + this.constructor).replace(/^\s*function\s*([^\(]*)[\S\s]+$/im, '$1');
 	    }
 	    Actor.prototype.update = function () {
 	        this.pos.add(this.vel);
@@ -86,6 +88,13 @@
 	    };
 	    Actor.prototype.remove = function () {
 	        this.isAlive = false;
+	    };
+	    Actor.prototype.testCollision = function (type) {
+	        var _this = this;
+	        return _.filter(Actor.get(type), function (a) {
+	            return p.abs(_this.pos.x - a.pos.x) < (_this.collision.x + a.collision.x) / 2 &&
+	                p.abs(_this.pos.y - a.pos.y) < (_this.collision.y + a.collision.y) / 2;
+	        });
 	    };
 	    Actor.prototype.drawPixels = function () {
 	        var a = this.angle;
@@ -138,6 +147,9 @@
 	    Actor.generatePixels = function (pattern, options) {
 	        if (options === void 0) { options = {}; }
 	        return pag.generate(pattern, options);
+	    };
+	    Actor.get = function (type) {
+	        return _.filter(Actor.actors, function (a) { return a.type === type; });
 	    };
 	    return Actor;
 	}());
@@ -50730,6 +50742,8 @@
 	    function Player() {
 	        _super.call(this);
 	        this.normalizedPos = new p5.Vector();
+	        this.fireInterval = 10;
+	        this.fireTicks = 0;
 	        this.pos.set(screenSize.x / 2, screenSize.y * 0.8);
 	        ui.setCurrentTargetPos(this.pos);
 	        this.setPixels();
@@ -50744,10 +50758,39 @@
 	        scrollOffsetX =
 	            (this.pos.x / screenSize.x) * (scrollScreenSizeX - screenSize.x);
 	        this.normalizedPos.set(this.pos.x / screenSize.x, this.pos.y / screenSize.y);
-	        //p.rect(this.screenPos.x - 2.5, this.screenPos.y - 2.5, 5, 5);
 	        _super.prototype.update.call(this);
+	        this.fireTicks--;
+	        if (this.fireTicks <= 0) {
+	            new Shot(this.normalizedPos);
+	            this.fireTicks = this.fireInterval;
+	        }
 	    };
 	    return Player;
+	}(actor_1.default));
+	var Shot = (function (_super) {
+	    __extends(Shot, _super);
+	    function Shot(pos) {
+	        _super.call(this);
+	        this.normalizedPos = new p5.Vector();
+	        if (Shot.pixels == null) {
+	            Shot.pixels = actor_1.default.generatePixels(['xx', ''], { isMirrorX: true });
+	        }
+	        this.pixels = Shot.pixels;
+	        this.normalizedPos.set(pos);
+	        this.angle = -p.HALF_PI;
+	        this.collision.set(10, 10);
+	    }
+	    Shot.prototype.update = function () {
+	        var _this = this;
+	        this.normalizedPos.y -= 0.03;
+	        setPosFromNormalizedPos(this);
+	        _.forEach(this.testCollision('Enemy'), function (a) {
+	            _this.remove();
+	            a.remove();
+	        });
+	        _super.prototype.update.call(this);
+	    };
+	    return Shot;
 	}(actor_1.default));
 	var Enemy = (function (_super) {
 	    __extends(Enemy, _super);
@@ -50779,6 +50822,7 @@
 	                break;
 	        }
 	        this.firingTicks = random.getInt(this.firingInterval);
+	        this.collision.set(8, 8);
 	        this.goToNextStep();
 	    };
 	    Enemy.prototype.goToNextStep = function () {
@@ -50834,13 +50878,7 @@
 	                this.firingTicks = this.firingInterval;
 	            }
 	        }
-	        this.pos.x = this.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
-	        this.pos.y = this.normalizedPos.y * screenSize.y;
-	        if (this.pos.x < scrollScreenSizeX * -0.1 || this.pos.x > scrollScreenSizeX * 1.1 ||
-	            this.normalizedPos.y < -0.1 || this.normalizedPos.y > 1.1) {
-	            this.remove();
-	        }
-	        p.rect(this.pos.x - 2.5, this.pos.y - 2.5, 5, 5);
+	        setPosFromNormalizedPos(this);
 	        this.checkTrigger();
 	        _super.prototype.update.call(this);
 	    };
@@ -50960,18 +50998,20 @@
 	    Bullet.prototype.update = function () {
 	        this.normalizedPos.x += Math.cos(this.normalizedAngle) * this.normalizedSpeed;
 	        this.normalizedPos.y += Math.sin(this.normalizedAngle) * this.normalizedSpeed;
-	        this.pos.x = this.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
-	        this.pos.y = this.normalizedPos.y * screenSize.y;
-	        if (this.pos.x < scrollScreenSizeX * -0.1 || this.pos.x > scrollScreenSizeX * 1.1 ||
-	            this.normalizedPos.y < -0.1 || this.normalizedPos.y > 1.1) {
-	            this.remove();
-	        }
+	        setPosFromNormalizedPos(this);
 	        this.angle += 0.1;
-	        //p.rect(this.pos.x - 1.5, this.pos.y - 1.5, 3, 3);
 	        _super.prototype.update.call(this);
 	    };
 	    return Bullet;
 	}(actor_1.default));
+	function setPosFromNormalizedPos(actor) {
+	    actor.pos.x = actor.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
+	    actor.pos.y = actor.normalizedPos.y * screenSize.y;
+	    if (actor.pos.x < scrollScreenSizeX * -0.1 || actor.pos.x > scrollScreenSizeX * 1.1 ||
+	        actor.normalizedPos.y < -0.1 || actor.normalizedPos.y > 1.1) {
+	        actor.remove();
+	    }
+	}
 
 
 /***/ },

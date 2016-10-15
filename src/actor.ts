@@ -15,9 +15,12 @@ export default class Actor {
   priority = 1;
   ticks = 0;
   pixels: pag.Pixel[][][];
+  type: string;
+  collision: p5.Vector = new p5.Vector();
 
   constructor() {
     Actor.add(this);
+    this.type = ('' + this.constructor).replace(/^\s*function\s*([^\(]*)[\S\s]+$/im, '$1');
   }
 
   update() {
@@ -32,6 +35,13 @@ export default class Actor {
 
   remove() {
     this.isAlive = false;
+  }
+
+  testCollision(type: string) {
+    return _.filter<Actor>(Actor.get(type), a =>
+      p.abs(this.pos.x - a.pos.x) < (this.collision.x + a.collision.x) / 2 &&
+      p.abs(this.pos.y - a.pos.y) < (this.collision.y + a.collision.y) / 2
+    );
   }
 
   drawPixels() {
@@ -91,5 +101,9 @@ export default class Actor {
 
   static generatePixels(pattern: string[], options = {}): pag.Pixel[][][] {
     return pag.generate(pattern, options);
+  }
+
+  static get(type: string) {
+    return _.filter<Actor>(Actor.actors, a => a.type === type);
   }
 }
