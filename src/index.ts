@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import * as ppe from 'ppe';
 import * as loop from './loop';
 import Actor from './actor';
 import Random from './random';
@@ -24,6 +25,7 @@ function init() {
   p5Canvas.setAttribute('style', null);
   p5Canvas.setAttribute('id', 'main');
   ui.init(p5Canvas, screenSize);
+  ppe.options.canvas = p5Canvas;
   p.fill(255);
   p.noStroke();
   loop.enableDebug(() => {
@@ -111,6 +113,7 @@ class Shot extends Actor {
     _.forEach(this.testCollision('Enemy'), a => {
       this.remove();
       a.remove();
+      ppe.emit('e1', a.pos.x, a.pos.y);
     });
     super.update();
   }

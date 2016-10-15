@@ -1,6 +1,7 @@
 import Actor from './actor';
 import * as debug from './debug';
 import * as pag from 'pag';
+import * as ppe from 'ppe';
 
 declare const require: any;
 export const p5 = require('p5');
@@ -36,6 +37,7 @@ function setup() {
 
 function draw() {
   p.background(options.backgroundColor);
+  ppe.update();
   updateFunc();
   Actor.update();
   ticks++;
@@ -43,10 +45,10 @@ function draw() {
 
 function sestSeeds(seed: number) {
   pag.setSeed(seed);
-  /*sss.reset();
-  sss.setSeed(seed);
   ppe.setSeed(seed);
   ppe.reset();
+  /*sss.reset();
+  sss.setSeed(seed);
   if (scene === Scene.game) {
     sss.playBgm();
   }*/
