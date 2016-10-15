@@ -46,6 +46,8 @@ function update() {
 
 class Player extends Actor {
   normalizedPos: p5.Vector = new p5.Vector();
+  fireInterval = 10;
+  fireTicks = 0;
 
   constructor() {
     super();
@@ -68,7 +70,32 @@ class Player extends Actor {
     scrollOffsetX =
       (this.pos.x / screenSize.x) * (scrollScreenSizeX - screenSize.x);
     this.normalizedPos.set(this.pos.x / screenSize.x, this.pos.y / screenSize.y);
-    //p.rect(this.screenPos.x - 2.5, this.screenPos.y - 2.5, 5, 5);
+    super.update();
+    this.fireTicks--;
+    if (this.fireTicks <= 0) {
+      new Shot(this.normalizedPos);
+      this.fireTicks = this.fireInterval;
+    }
+  }
+}
+
+class Shot extends Actor {
+  static pixels;
+  normalizedPos: p5.Vector = new p5.Vector();
+
+  constructor(pos: p5.Vector) {
+    super();
+    if (Shot.pixels == null) {
+      Shot.pixels = Actor.generatePixels(['xx', ''], { isMirrorX: true });
+    }
+    this.pixels = Shot.pixels;
+    this.normalizedPos.set(pos);
+    this.angle = -p.HALF_PI;
+  }
+
+  update() {
+    this.normalizedPos.y -= 0.02;
+    setPosFromNormalizedPos(this);
     super.update();
   }
 }
@@ -160,13 +187,7 @@ class Enemy extends Actor {
         this.firingTicks = this.firingInterval;
       }
     }
-    this.pos.x = this.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
-    this.pos.y = this.normalizedPos.y * screenSize.y;
-    if (this.pos.x < scrollScreenSizeX * -0.1 || this.pos.x > scrollScreenSizeX * 1.1 ||
-      this.normalizedPos.y < -0.1 || this.normalizedPos.y > 1.1) {
-      this.remove();
-    }
-    p.rect(this.pos.x - 2.5, this.pos.y - 2.5, 5, 5);
+    setPosFromNormalizedPos(this);
     this.checkTrigger();
     super.update();
   }
@@ -291,14 +312,17 @@ class Bullet extends Actor {
   update() {
     this.normalizedPos.x += Math.cos(this.normalizedAngle) * this.normalizedSpeed;
     this.normalizedPos.y += Math.sin(this.normalizedAngle) * this.normalizedSpeed;
-    this.pos.x = this.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
-    this.pos.y = this.normalizedPos.y * screenSize.y;
-    if (this.pos.x < scrollScreenSizeX * -0.1 || this.pos.x > scrollScreenSizeX * 1.1 ||
-      this.normalizedPos.y < -0.1 || this.normalizedPos.y > 1.1) {
-      this.remove();
-    }
+    setPosFromNormalizedPos(this);
     this.angle += 0.1;
-    //p.rect(this.pos.x - 1.5, this.pos.y - 1.5, 3, 3);
     super.update();
+  }
+}
+
+function setPosFromNormalizedPos(actor) {
+  actor.pos.x = actor.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
+  actor.pos.y = actor.normalizedPos.y * screenSize.y;
+  if (actor.pos.x < scrollScreenSizeX * -0.1 || actor.pos.x > scrollScreenSizeX * 1.1 ||
+    actor.normalizedPos.y < -0.1 || actor.normalizedPos.y > 1.1) {
+    actor.remove();
   }
 }
