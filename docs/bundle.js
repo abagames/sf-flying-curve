@@ -50745,7 +50745,7 @@
 	        this.normalizedPos = new p5.Vector();
 	        this.fireInterval = 5;
 	        this.fireTicks = 0;
-	        this.chaisingSpeed = 2;
+	        this.chasingSpeed = 2;
 	        this.ofs = new p5.Vector();
 	        this.pos.set(screenSize.x / 2, screenSize.y * 0.8);
 	        ui.setCurrentTargetPos(this.pos);
@@ -50759,11 +50759,11 @@
 	        this.ofs.set(ui.targetPos);
 	        this.ofs.sub(this.pos);
 	        var d = this.ofs.mag();
-	        if (d <= this.chaisingSpeed) {
+	        if (d <= this.chasingSpeed) {
 	            this.pos.set(ui.targetPos);
 	        }
 	        else {
-	            this.ofs.div(d / this.chaisingSpeed);
+	            this.ofs.div(d / this.chasingSpeed);
 	            this.pos.add(this.ofs);
 	        }
 	        this.pos.set(p.constrain(this.pos.x, 0, screenSize.x), p.constrain(this.pos.y, 0, screenSize.y));
@@ -50819,7 +50819,6 @@
 	        switch (this.flyingCurve.spawnType) {
 	            case SpawnType.random:
 	                this.normalizedPos.x = random.get();
-	                this.normalizedPos.y = -0.05;
 	                this.sineAngle = random.get() < 0.5 ? -p.PI / 2 : p.PI / 2;
 	                break;
 	            case SpawnType.oppositeX:
@@ -50833,6 +50832,7 @@
 	                }
 	                break;
 	        }
+	        this.normalizedPos.y = -0.04;
 	        this.firingTicks = random.getInt(this.firingInterval);
 	        this.collision.set(8, 8);
 	        this.goToNextStep();
@@ -50935,7 +50935,7 @@
 	            step.ySpeed = get2DRandom(0.005, 0.015);
 	            step.trigger.type = getRandomEnum(TriggerType, 1);
 	            step.trigger.isReverseYWay = random.get() < 0.5;
-	            step.isFiring = random.get() < 0.75;
+	            step.isFiring = sc === 1 || random.get() < 0.75;
 	            return step;
 	        });
 	        this.steps[this.steps.length - 1].trigger.type = TriggerType.none;
@@ -51019,8 +51019,8 @@
 	function setPosFromNormalizedPos(actor) {
 	    actor.pos.x = actor.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
 	    actor.pos.y = actor.normalizedPos.y * screenSize.y;
-	    if (actor.pos.x < scrollScreenSizeX * -0.06 || actor.pos.x > scrollScreenSizeX * 1.06 ||
-	        actor.normalizedPos.y < -0.06 || actor.normalizedPos.y > 1.06) {
+	    if (actor.pos.x < screenSize.x * -0.05 || actor.pos.x > screenSize.x * 1.05 ||
+	        actor.normalizedPos.y < -0.05 || actor.normalizedPos.y > 1.05) {
 	        actor.remove();
 	    }
 	}

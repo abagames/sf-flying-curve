@@ -132,7 +132,6 @@ class Enemy extends Actor {
     switch (this.flyingCurve.spawnType) {
       case SpawnType.random:
         this.normalizedPos.x = random.get();
-        this.normalizedPos.y = -0.05;
         this.sineAngle = random.get() < 0.5 ? - p.PI / 2 : p.PI / 2;
         break;
       case SpawnType.oppositeX:
@@ -145,6 +144,7 @@ class Enemy extends Actor {
         }
         break;
     }
+    this.normalizedPos.y = -0.04;
     this.firingTicks = random.getInt(this.firingInterval);
     this.collision.set(8, 8);
     this.goToNextStep();
@@ -256,7 +256,7 @@ class FlyingCurve {
       step.ySpeed = get2DRandom(0.005, 0.015);
       step.trigger.type = getRandomEnum(TriggerType, 1);
       step.trigger.isReverseYWay = random.get() < 0.5;
-      step.isFiring = random.get() < 0.75;
+      step.isFiring = sc === 1 || random.get() < 0.75;
       return step;
     });
     this.steps[this.steps.length - 1].trigger.type = TriggerType.none;
@@ -338,8 +338,8 @@ class Bullet extends Actor {
 function setPosFromNormalizedPos(actor) {
   actor.pos.x = actor.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
   actor.pos.y = actor.normalizedPos.y * screenSize.y;
-  if (actor.pos.x < scrollScreenSizeX * -0.06 || actor.pos.x > scrollScreenSizeX * 1.06 ||
-    actor.normalizedPos.y < -0.06 || actor.normalizedPos.y > 1.06) {
+  if (actor.pos.x < screenSize.x * -0.05 || actor.pos.x > screenSize.x * 1.05 ||
+    actor.normalizedPos.y < -0.05 || actor.normalizedPos.y > 1.05) {
     actor.remove();
   }
 }
