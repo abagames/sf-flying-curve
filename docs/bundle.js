@@ -61,7 +61,8 @@
 	var _ = __webpack_require__(2);
 	var pag = __webpack_require__(4);
 	var loop = __webpack_require__(5);
-	var p5 = loop.p5;
+	var screen = __webpack_require__(15);
+	var p5;
 	var p;
 	var rotationNum = 16;
 	var Actor = (function () {
@@ -74,6 +75,7 @@
 	        this.priority = 1;
 	        this.ticks = 0;
 	        this.collision = new p5.Vector();
+	        this.context = screen.context;
 	        Actor.add(this);
 	        this.type = ('' + this.constructor).replace(/^\s*function\s*([^\(]*)[\S\s]+$/im, '$1');
 	    }
@@ -104,20 +106,21 @@
 	        var pxs = this.pixels[Math.round(a / (Math.PI * 2 / rotationNum)) % rotationNum];
 	        var pw = pxs.length;
 	        var ph = pxs[0].length;
-	        var sbx = p.floor(this.pos.x - pw / 2);
-	        var sby = p.floor(this.pos.y - ph / 2);
+	        var sbx = Math.floor(this.pos.x - pw / 2);
+	        var sby = Math.floor(this.pos.y - ph / 2);
 	        p.noStroke();
 	        for (var y = 0, sy = sby; y < ph; y++, sy++) {
 	            for (var x = 0, sx = sbx; x < pw; x++, sx++) {
 	                var px = pxs[x][y];
 	                if (!px.isEmpty) {
-	                    p.fill(px.style);
-	                    p.rect(sx, sy, 1, 1);
+	                    this.context.fillStyle = px.style;
+	                    this.context.fillRect(sx, sy, 1, 1);
 	                }
 	            }
 	        }
 	    };
 	    Actor.init = function () {
+	        p5 = loop.p5;
 	        p = loop.p;
 	        pag.defaultOptions.isMirrorY = true;
 	        pag.defaultOptions.rotationNum = rotationNum;
@@ -17566,13 +17569,11 @@
 
 	"use strict";
 	var actor_1 = __webpack_require__(1);
+	var screen = __webpack_require__(15);
 	var debug = __webpack_require__(6);
 	var pag = __webpack_require__(4);
 	var ppe = __webpack_require__(7);
 	exports.p5 = __webpack_require__(8);
-	exports.options = {
-	    backgroundColor: 0
-	};
 	exports.ticks = 0;
 	var initFunc;
 	var updateFunc;
@@ -17598,8 +17599,9 @@
 	    initFunc();
 	}
 	function draw() {
-	    exports.p.background(exports.options.backgroundColor);
+	    screen.clear();
 	    ppe.update();
+	    screen.drawBloomParticles();
 	    updateFunc();
 	    actor_1.default.update();
 	    exports.ticks++;
@@ -51128,6 +51130,7 @@
 	var flyingCurve;
 	function init() {
 	    p = loop.p;
+	    screen.options.bloomIntensity = 0.2;
 	    screen.init(96, 128);
 	    scrollScreenSizeX = 128;
 	    ui.init(screen.canvas, screen.size);
@@ -51424,7 +51427,8 @@
 	        ofs.set(player.normalizedPos);
 	        ofs.sub(pos);
 	        this.normalizedAngle = ofs.heading();
-	        this.normalizedSpeed = get2DRandom(0.01, Math.sqrt(loop.ticks * 0.005 + 1) * 0.01);
+	        this.normalizedSpeed = get2DRandom(0.01, Math.sqrt(loop.ticks * 0.003 + 1) * 0.01);
+	        this.context = screen.overlayContext;
 	    }
 	    Bullet.prototype.update = function () {
 	        this.normalizedPos.x += Math.cos(this.normalizedAngle) * this.normalizedSpeed;
@@ -52226,7 +52230,6 @@
 	var sss = __webpack_require__(13);
 	var loop = __webpack_require__(5);
 	var p5 = loop.p5;
-	var p;
 	exports.cursorPos = new p5.Vector();
 	exports.targetPos = new p5.Vector();
 	exports.isPressing = false;
@@ -53990,19 +53993,52 @@
 	"use strict";
 	var loop = __webpack_require__(5);
 	var ppe = __webpack_require__(7);
-	var p5 = loop.p5;
+	exports.options = {
+	    backgroundColor: 0,
+	    bloomIntensity: 0.3
+	};
+	var p5;
 	var p;
 	function init(x, y) {
 	    if (x === void 0) { x = 128; }
 	    if (y === void 0) { y = 128; }
+	    p5 = loop.p5;
 	    p = loop.p;
 	    exports.size = new p5.Vector(x, y);
 	    exports.canvas = p.createCanvas(exports.size.x, exports.size.y).canvas;
 	    exports.canvas.setAttribute('style', null);
 	    exports.canvas.setAttribute('id', 'main');
+	    exports.context = exports.canvas.getContext('2d');
 	    ppe.options.canvas = exports.canvas;
+	    var bloomCanvas = document.getElementById('bloom');
+	    bloomCanvas.width = exports.size.x / 2;
+	    bloomCanvas.height = exports.size.y / 2;
+	    exports.bloomContext = bloomCanvas.getContext('2d');
+	    var overlayCanvas = document.getElementById('overlay');
+	    overlayCanvas.width = exports.size.x;
+	    overlayCanvas.height = exports.size.y;
+	    exports.overlayContext = overlayCanvas.getContext('2d');
 	}
 	exports.init = init;
+	function clear() {
+	    p.background(exports.options.backgroundColor);
+	    exports.bloomContext.clearRect(0, 0, exports.size.x / 2, exports.size.y / 2);
+	    exports.overlayContext.clearRect(0, 0, exports.size.x, exports.size.y);
+	}
+	exports.clear = clear;
+	function drawBloomParticles() {
+	    var pts = ppe.getParticles();
+	    for (var i = 0; i < pts.length; i++) {
+	        var p_1 = pts[i];
+	        var r = Math.floor(Math.sqrt(p_1.color.r) * 255);
+	        var g = Math.floor(Math.sqrt(p_1.color.g) * 255);
+	        var b = Math.floor(Math.sqrt(p_1.color.b) * 255);
+	        var a = Math.max(p_1.color.r, p_1.color.g, p_1.color.b) * exports.options.bloomIntensity;
+	        exports.bloomContext.fillStyle = "rgba(" + r + "," + g + "," + b + ", " + a + ")";
+	        exports.bloomContext.fillRect((p_1.pos.x - p_1.size) / 2, (p_1.pos.y - p_1.size) / 2, p_1.size, p_1.size);
+	    }
+	}
+	exports.drawBloomParticles = drawBloomParticles;
 
 
 /***/ }

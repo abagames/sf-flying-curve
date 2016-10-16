@@ -1,4 +1,5 @@
 import Actor from './actor';
+import * as screen from './screen';
 import * as debug from './debug';
 import * as pag from 'pag';
 import * as ppe from 'ppe';
@@ -6,9 +7,6 @@ import * as ppe from 'ppe';
 declare const require: any;
 export const p5 = require('p5');
 export let p: p5;
-export let options = {
-  backgroundColor: 0
-};
 export let ticks = 0;
 
 let initFunc: Function;
@@ -36,8 +34,9 @@ function setup() {
 }
 
 function draw() {
-  p.background(options.backgroundColor);
+  screen.clear();
   ppe.update();
+  screen.drawBloomParticles();
   updateFunc();
   Actor.update();
   ticks++;

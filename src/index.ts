@@ -19,6 +19,7 @@ let flyingCurve: FlyingCurve;
 
 function init() {
   p = loop.p;
+  screen.options.bloomIntensity = 0.2;
   screen.init(96, 128);
   scrollScreenSizeX = 128;
   ui.init(screen.canvas, screen.size);
@@ -332,6 +333,7 @@ class Bullet extends Actor {
     ofs.sub(pos);
     this.normalizedAngle = ofs.heading();
     this.normalizedSpeed = get2DRandom(0.01, Math.sqrt(loop.ticks * 0.003 + 1) * 0.01);
+    this.context = screen.overlayContext;
   }
 
   update() {

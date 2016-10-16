@@ -1,9 +1,10 @@
 import * as _ from 'lodash';
 import * as pag from 'pag';
 import * as loop from './loop';
-let p5 = loop.p5;
-let p: p5;
+import * as screen from './screen';
 
+let p5;
+let p: p5;
 const rotationNum = 16;
 
 export default class Actor {
@@ -17,6 +18,7 @@ export default class Actor {
   pixels: pag.Pixel[][][];
   type: string;
   collision: p5.Vector = new p5.Vector();
+  context: CanvasRenderingContext2D = screen.context;
 
   constructor() {
     Actor.add(this);
@@ -53,15 +55,15 @@ export default class Actor {
       this.pixels[Math.round(a / (Math.PI * 2 / rotationNum)) % rotationNum];
     const pw = pxs.length;
     const ph = pxs[0].length;
-    const sbx = p.floor(this.pos.x - pw / 2);
-    const sby = p.floor(this.pos.y - ph / 2);
+    const sbx = Math.floor(this.pos.x - pw / 2);
+    const sby = Math.floor(this.pos.y - ph / 2);
     p.noStroke();
     for (let y = 0, sy = sby; y < ph; y++ , sy++) {
       for (let x = 0, sx = sbx; x < pw; x++ , sx++) {
         var px = pxs[x][y];
         if (!px.isEmpty) {
-          p.fill(px.style);
-          p.rect(sx, sy, 1, 1);
+          this.context.fillStyle = px.style;
+          this.context.fillRect(sx, sy, 1, 1);
         }
       }
     }
@@ -70,6 +72,7 @@ export default class Actor {
   static actors: any[];
 
   static init() {
+    p5 = loop.p5;
     p = loop.p;
     pag.defaultOptions.isMirrorY = true;
     pag.defaultOptions.rotationNum = rotationNum;

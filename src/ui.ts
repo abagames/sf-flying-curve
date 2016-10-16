@@ -2,8 +2,6 @@ import * as sss from 'sss';
 import * as loop from './loop';
 
 let p5 = loop.p5;
-let p: p5;
-
 export let cursorPos: p5.Vector = new p5.Vector();
 export let targetPos: p5.Vector = new p5.Vector();
 export let isPressing = false;
