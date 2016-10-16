@@ -51117,9 +51117,9 @@
 	var actor_1 = __webpack_require__(1);
 	var random_1 = __webpack_require__(10);
 	var ui = __webpack_require__(12);
+	var screen = __webpack_require__(15);
 	var p5 = loop.p5;
 	var p;
-	var screenSize;
 	var random = new random_1.default();
 	loop.init(init, update);
 	var scrollScreenSizeX;
@@ -51128,13 +51128,9 @@
 	var flyingCurve;
 	function init() {
 	    p = loop.p;
-	    screenSize = new p5.Vector(96, 128);
+	    screen.init(96, 128);
 	    scrollScreenSizeX = 128;
-	    var p5Canvas = p.createCanvas(screenSize.x, screenSize.y).canvas;
-	    p5Canvas.setAttribute('style', null);
-	    p5Canvas.setAttribute('id', 'main');
-	    ui.init(p5Canvas, screenSize);
-	    ppe.options.canvas = p5Canvas;
+	    ui.init(screen.canvas, screen.size);
 	    p.fill(255);
 	    p.noStroke();
 	    loop.enableDebug(function () {
@@ -51163,7 +51159,7 @@
 	        this.fireTicks = 0;
 	        this.chasingSpeed = 2;
 	        this.ofs = new p5.Vector();
-	        this.pos.set(screenSize.x / 2, screenSize.y * 0.8);
+	        this.pos.set(screen.size.x / 2, screen.size.y * 0.8);
 	        ui.setCurrentTargetPos(this.pos);
 	        this.setPixels();
 	        this.angle = -p.HALF_PI;
@@ -51182,10 +51178,10 @@
 	            this.ofs.div(d / this.chasingSpeed);
 	            this.pos.add(this.ofs);
 	        }
-	        this.pos.set(p.constrain(this.pos.x, 0, screenSize.x), p.constrain(this.pos.y, 0, screenSize.y));
+	        this.pos.set(p.constrain(this.pos.x, 0, screen.size.x), p.constrain(this.pos.y, 0, screen.size.y));
 	        scrollOffsetX =
-	            (this.pos.x / screenSize.x) * (scrollScreenSizeX - screenSize.x);
-	        this.normalizedPos.set(this.pos.x / screenSize.x, this.pos.y / screenSize.y);
+	            (this.pos.x / screen.size.x) * (scrollScreenSizeX - screen.size.x);
+	        this.normalizedPos.set(this.pos.x / screen.size.x, this.pos.y / screen.size.y);
 	        _super.prototype.update.call(this);
 	        this.fireTicks--;
 	        if (this.fireTicks <= 0) {
@@ -51441,8 +51437,8 @@
 	}(actor_1.default));
 	function setPosFromNormalizedPos(actor) {
 	    actor.pos.x = actor.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
-	    actor.pos.y = actor.normalizedPos.y * screenSize.y;
-	    if (actor.pos.x < screenSize.x * -0.05 || actor.pos.x > screenSize.x * 1.05 ||
+	    actor.pos.y = actor.normalizedPos.y * screen.size.y;
+	    if (actor.pos.x < screen.size.x * -0.05 || actor.pos.x > screen.size.x * 1.05 ||
 	        actor.normalizedPos.y < -0.05 || actor.normalizedPos.y > 1.05) {
 	        actor.remove();
 	    }
@@ -53985,6 +53981,28 @@
 	        context.fillRect(d.x + x, d.y + y, 1, 1);
 	    }
 	}
+
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var loop = __webpack_require__(5);
+	var ppe = __webpack_require__(7);
+	var p5 = loop.p5;
+	var p;
+	function init(x, y) {
+	    if (x === void 0) { x = 128; }
+	    if (y === void 0) { y = 128; }
+	    p = loop.p;
+	    exports.size = new p5.Vector(x, y);
+	    exports.canvas = p.createCanvas(exports.size.x, exports.size.y).canvas;
+	    exports.canvas.setAttribute('style', null);
+	    exports.canvas.setAttribute('id', 'main');
+	    ppe.options.canvas = exports.canvas;
+	}
+	exports.init = init;
 
 
 /***/ }

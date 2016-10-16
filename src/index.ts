@@ -4,10 +4,10 @@ import * as loop from './loop';
 import Actor from './actor';
 import Random from './random';
 import * as ui from './ui';
+import * as screen from './screen';
 
 let p5 = loop.p5;
 let p: p5;
-let screenSize: p5.Vector;
 let random = new Random();
 
 loop.init(init, update);
@@ -19,13 +19,9 @@ let flyingCurve: FlyingCurve;
 
 function init() {
   p = loop.p;
-  screenSize = new p5.Vector(96, 128);
+  screen.init(96, 128);
   scrollScreenSizeX = 128;
-  const p5Canvas = p.createCanvas(screenSize.x, screenSize.y).canvas;
-  p5Canvas.setAttribute('style', null);
-  p5Canvas.setAttribute('id', 'main');
-  ui.init(p5Canvas, screenSize);
-  ppe.options.canvas = p5Canvas;
+  ui.init(screen.canvas, screen.size);
   p.fill(255);
   p.noStroke();
   loop.enableDebug(() => {
@@ -56,7 +52,7 @@ class Player extends Actor {
 
   constructor() {
     super();
-    this.pos.set(screenSize.x / 2, screenSize.y * 0.8);
+    this.pos.set(screen.size.x / 2, screen.size.y * 0.8);
     ui.setCurrentTargetPos(this.pos);
     this.setPixels();
     this.angle = -p.HALF_PI;
@@ -77,12 +73,12 @@ class Player extends Actor {
       this.pos.add(this.ofs);
     }
     this.pos.set(
-      p.constrain(this.pos.x, 0, screenSize.x),
-      p.constrain(this.pos.y, 0, screenSize.y)
+      p.constrain(this.pos.x, 0, screen.size.x),
+      p.constrain(this.pos.y, 0, screen.size.y)
     );
     scrollOffsetX =
-      (this.pos.x / screenSize.x) * (scrollScreenSizeX - screenSize.x);
-    this.normalizedPos.set(this.pos.x / screenSize.x, this.pos.y / screenSize.y);
+      (this.pos.x / screen.size.x) * (scrollScreenSizeX - screen.size.x);
+    this.normalizedPos.set(this.pos.x / screen.size.x, this.pos.y / screen.size.y);
     super.update();
     this.fireTicks--;
     if (this.fireTicks <= 0) {
@@ -335,7 +331,7 @@ class Bullet extends Actor {
     ofs.set(player.normalizedPos);
     ofs.sub(pos);
     this.normalizedAngle = ofs.heading();
-    this.normalizedSpeed = get2DRandom(0.01, Math.sqrt(loop.ticks * 0.005 + 1) * 0.01);
+    this.normalizedSpeed = get2DRandom(0.01, Math.sqrt(loop.ticks * 0.003 + 1) * 0.01);
   }
 
   update() {
@@ -349,8 +345,8 @@ class Bullet extends Actor {
 
 function setPosFromNormalizedPos(actor) {
   actor.pos.x = actor.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
-  actor.pos.y = actor.normalizedPos.y * screenSize.y;
-  if (actor.pos.x < screenSize.x * -0.05 || actor.pos.x > screenSize.x * 1.05 ||
+  actor.pos.y = actor.normalizedPos.y * screen.size.y;
+  if (actor.pos.x < screen.size.x * -0.05 || actor.pos.x > screen.size.x * 1.05 ||
     actor.normalizedPos.y < -0.05 || actor.normalizedPos.y > 1.05) {
     actor.remove();
   }
