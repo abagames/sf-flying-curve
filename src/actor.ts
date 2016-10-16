@@ -57,7 +57,6 @@ export default class Actor {
     const ph = pxs[0].length;
     const sbx = Math.floor(this.pos.x - pw / 2);
     const sby = Math.floor(this.pos.y - ph / 2);
-    p.noStroke();
     for (let y = 0, sy = sby; y < ph; y++ , sy++) {
       for (let x = 0, sx = sbx; x < pw; x++ , sx++) {
         var px = pxs[x][y];

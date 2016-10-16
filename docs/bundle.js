@@ -45,12 +45,13 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(1);
-	__webpack_require__(6);
-	__webpack_require__(9);
-	__webpack_require__(5);
+	__webpack_require__(8);
 	__webpack_require__(10);
-	__webpack_require__(14);
-	module.exports = __webpack_require__(12);
+	__webpack_require__(5);
+	__webpack_require__(11);
+	__webpack_require__(6);
+	__webpack_require__(15);
+	module.exports = __webpack_require__(13);
 
 
 /***/ },
@@ -61,7 +62,7 @@
 	var _ = __webpack_require__(2);
 	var pag = __webpack_require__(4);
 	var loop = __webpack_require__(5);
-	var screen = __webpack_require__(15);
+	var screen = __webpack_require__(6);
 	var p5;
 	var p;
 	var rotationNum = 16;
@@ -108,7 +109,6 @@
 	        var ph = pxs[0].length;
 	        var sbx = Math.floor(this.pos.x - pw / 2);
 	        var sby = Math.floor(this.pos.y - ph / 2);
-	        p.noStroke();
 	        for (var y = 0, sy = sby; y < ph; y++, sy++) {
 	            for (var x = 0, sx = sbx; x < pw; x++, sx++) {
 	                var px = pxs[x][y];
@@ -17569,11 +17569,11 @@
 
 	"use strict";
 	var actor_1 = __webpack_require__(1);
-	var screen = __webpack_require__(15);
-	var debug = __webpack_require__(6);
+	var screen = __webpack_require__(6);
+	var debug = __webpack_require__(8);
 	var pag = __webpack_require__(4);
 	var ppe = __webpack_require__(7);
-	exports.p5 = __webpack_require__(8);
+	exports.p5 = __webpack_require__(9);
 	exports.ticks = 0;
 	var initFunc;
 	var updateFunc;
@@ -17621,38 +17621,57 @@
 
 /***/ },
 /* 6 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	function initSeedUi(onSeedChanged) {
-	    var p = document.createElement('p');
-	    p.innerHTML = '<button id="change">change</button>' +
-	        'random seed: <input type="number" id="seed" value="0"></input>' +
-	        '<button id="set">set</button>';
-	    document.getElementsByTagName('body')[0].appendChild(p);
-	    var changeElm = document.getElementById('change');
-	    var seedElm = document.getElementById('seed');
-	    var setElm = document.getElementById('set');
-	    changeElm.onclick = function () {
-	        seedElm.value = Math.floor(Math.random() * 9999999).toString();
-	        onSeedChanging();
-	    };
-	    setElm.onclick = onSeedChanging;
-	    function onSeedChanging() {
-	        onSeedChanged(Number(seedElm.value));
+	var loop = __webpack_require__(5);
+	var ppe = __webpack_require__(7);
+	exports.options = {
+	    backgroundColor: 0,
+	    bloomIntensity: 0.3
+	};
+	var p5;
+	var p;
+	function init(x, y) {
+	    if (x === void 0) { x = 128; }
+	    if (y === void 0) { y = 128; }
+	    p5 = loop.p5;
+	    p = loop.p;
+	    exports.size = new p5.Vector(x, y);
+	    exports.canvas = p.createCanvas(exports.size.x, exports.size.y).canvas;
+	    exports.canvas.setAttribute('style', null);
+	    exports.canvas.setAttribute('id', 'main');
+	    exports.context = exports.canvas.getContext('2d');
+	    ppe.options.canvas = exports.canvas;
+	    var bloomCanvas = document.getElementById('bloom');
+	    bloomCanvas.width = exports.size.x / 2;
+	    bloomCanvas.height = exports.size.y / 2;
+	    exports.bloomContext = bloomCanvas.getContext('2d');
+	    var overlayCanvas = document.getElementById('overlay');
+	    overlayCanvas.width = exports.size.x;
+	    overlayCanvas.height = exports.size.y;
+	    exports.overlayContext = overlayCanvas.getContext('2d');
+	}
+	exports.init = init;
+	function clear() {
+	    p.background(exports.options.backgroundColor);
+	    exports.bloomContext.clearRect(0, 0, exports.size.x / 2, exports.size.y / 2);
+	    exports.overlayContext.clearRect(0, 0, exports.size.x, exports.size.y);
+	}
+	exports.clear = clear;
+	function drawBloomParticles() {
+	    var pts = ppe.getParticles();
+	    for (var i = 0; i < pts.length; i++) {
+	        var p_1 = pts[i];
+	        var r = Math.floor(Math.sqrt(p_1.color.r) * 255);
+	        var g = Math.floor(Math.sqrt(p_1.color.g) * 255);
+	        var b = Math.floor(Math.sqrt(p_1.color.b) * 255);
+	        var a = Math.max(p_1.color.r, p_1.color.g, p_1.color.b) * exports.options.bloomIntensity;
+	        exports.bloomContext.fillStyle = "rgba(" + r + "," + g + "," + b + ", " + a + ")";
+	        exports.bloomContext.fillRect((p_1.pos.x - p_1.size) / 2, (p_1.pos.y - p_1.size) / 2, p_1.size, p_1.size);
 	    }
 	}
-	exports.initSeedUi = initSeedUi;
-	function enableShowingErrors() {
-	    var pre = document.createElement('pre');
-	    document.getElementsByTagName('body')[0].appendChild(pre);
-	    window.addEventListener('error', function (error) {
-	        var message = [error.filename, '@', error.lineno, ':\n', error.message].join('');
-	        pre.textContent += '\n' + message;
-	        return false;
-	    });
-	}
-	exports.enableShowingErrors = enableShowingErrors;
+	exports.drawBloomParticles = drawBloomParticles;
 
 
 /***/ },
@@ -18071,6 +18090,42 @@
 
 /***/ },
 /* 8 */
+/***/ function(module, exports) {
+
+	"use strict";
+	function initSeedUi(onSeedChanged) {
+	    var p = document.createElement('p');
+	    p.innerHTML = '<button id="change">change</button>' +
+	        'random seed: <input type="number" id="seed" value="0"></input>' +
+	        '<button id="set">set</button>';
+	    document.getElementsByTagName('body')[0].appendChild(p);
+	    var changeElm = document.getElementById('change');
+	    var seedElm = document.getElementById('seed');
+	    var setElm = document.getElementById('set');
+	    changeElm.onclick = function () {
+	        seedElm.value = Math.floor(Math.random() * 9999999).toString();
+	        onSeedChanging();
+	    };
+	    setElm.onclick = onSeedChanging;
+	    function onSeedChanging() {
+	        onSeedChanged(Number(seedElm.value));
+	    }
+	}
+	exports.initSeedUi = initSeedUi;
+	function enableShowingErrors() {
+	    var pre = document.createElement('pre');
+	    document.getElementsByTagName('body')[0].appendChild(pre);
+	    window.addEventListener('error', function (error) {
+	        var message = [error.filename, '@', error.lineno, ':\n', error.message].join('');
+	        pre.textContent += '\n' + message;
+	        return false;
+	    });
+	}
+	exports.enableShowingErrors = enableShowingErrors;
+
+
+/***/ },
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var require;var require;/*! p5.js v0.5.4 October 01, 2016 */
@@ -51104,7 +51159,7 @@
 	});
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -51117,9 +51172,9 @@
 	var ppe = __webpack_require__(7);
 	var loop = __webpack_require__(5);
 	var actor_1 = __webpack_require__(1);
-	var random_1 = __webpack_require__(10);
-	var ui = __webpack_require__(12);
-	var screen = __webpack_require__(15);
+	var random_1 = __webpack_require__(11);
+	var ui = __webpack_require__(13);
+	var screen = __webpack_require__(6);
 	var p5 = loop.p5;
 	var p;
 	var random = new random_1.default();
@@ -51142,6 +51197,7 @@
 	        Bullet.pixels = null;
 	    });
 	    player = new Player();
+	    _.times(64, function () { new Star(); });
 	}
 	function update() {
 	    if (loop.ticks % 200 === 0) {
@@ -51158,9 +51214,9 @@
 	    function Player() {
 	        _super.call(this);
 	        this.normalizedPos = new p5.Vector();
-	        this.fireInterval = 5;
+	        this.fireInterval = 7;
 	        this.fireTicks = 0;
-	        this.chasingSpeed = 2;
+	        this.chasingSpeed = 1.5;
 	        this.ofs = new p5.Vector();
 	        this.pos.set(screen.size.x / 2, screen.size.y * 0.8);
 	        ui.setCurrentTargetPos(this.pos);
@@ -51248,7 +51304,7 @@
 	                break;
 	        }
 	        this.normalizedPos.y = -0.04;
-	        this.firingInterval = 120 / Math.sqrt(loop.ticks * 0.01 + 1);
+	        this.firingInterval = 150 / Math.sqrt(loop.ticks * 0.007 + 1);
 	        this.firingTicks = random.getInt(this.firingInterval);
 	        this.collision.set(8, 8);
 	        this.goToNextStep();
@@ -51427,7 +51483,7 @@
 	        ofs.set(player.normalizedPos);
 	        ofs.sub(pos);
 	        this.normalizedAngle = ofs.heading();
-	        this.normalizedSpeed = get2DRandom(0.01, Math.sqrt(loop.ticks * 0.003 + 1) * 0.01);
+	        this.normalizedSpeed = get2DRandom(0.01, Math.sqrt(loop.ticks * 0.002 + 1) * 0.01);
 	        this.context = screen.overlayContext;
 	    }
 	    Bullet.prototype.update = function () {
@@ -51438,6 +51494,26 @@
 	        _super.prototype.update.call(this);
 	    };
 	    return Bullet;
+	}(actor_1.default));
+	var Star = (function (_super) {
+	    __extends(Star, _super);
+	    function Star() {
+	        _super.call(this);
+	        this.pos.set(random.get(0, scrollScreenSizeX), random.get(0, screen.size.y));
+	        this.vel.y = random.get(0.5, 2);
+	        this.priority = 0;
+	        this.color =
+	            "rgb(" + random.getInt(180, 250) + "," + random.getInt(180, 250) + "," + random.getInt(180, 250) + ")";
+	    }
+	    Star.prototype.update = function () {
+	        _super.prototype.update.call(this);
+	        screen.context.fillStyle = this.color;
+	        screen.context.fillRect(this.pos.x - scrollOffsetX, this.pos.y, 1, 1);
+	        if (this.pos.y > screen.size.y) {
+	            this.pos.y -= screen.size.y;
+	        }
+	    };
+	    return Star;
 	}(actor_1.default));
 	function setPosFromNormalizedPos(actor) {
 	    actor.pos.x = actor.normalizedPos.x * scrollScreenSizeX - scrollOffsetX;
@@ -51450,11 +51526,11 @@
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var ir = __webpack_require__(11);
+	var ir = __webpack_require__(12);
 	var Random = (function () {
 	    function Random() {
 	        this.propNames = ['x', 'y', 'z', 'w'];
@@ -51506,7 +51582,7 @@
 
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function webpackUniversalModuleDefinition(root, factory) {
@@ -52223,11 +52299,11 @@
 	;
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var sss = __webpack_require__(13);
+	var sss = __webpack_require__(14);
 	var loop = __webpack_require__(5);
 	var p5 = loop.p5;
 	exports.cursorPos = new p5.Vector();
@@ -52293,7 +52369,7 @@
 
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function webpackUniversalModuleDefinition(root, factory) {
@@ -53900,7 +53976,7 @@
 	;
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -53984,61 +54060,6 @@
 	        context.fillRect(d.x + x, d.y + y, 1, 1);
 	    }
 	}
-
-
-/***/ },
-/* 15 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var loop = __webpack_require__(5);
-	var ppe = __webpack_require__(7);
-	exports.options = {
-	    backgroundColor: 0,
-	    bloomIntensity: 0.3
-	};
-	var p5;
-	var p;
-	function init(x, y) {
-	    if (x === void 0) { x = 128; }
-	    if (y === void 0) { y = 128; }
-	    p5 = loop.p5;
-	    p = loop.p;
-	    exports.size = new p5.Vector(x, y);
-	    exports.canvas = p.createCanvas(exports.size.x, exports.size.y).canvas;
-	    exports.canvas.setAttribute('style', null);
-	    exports.canvas.setAttribute('id', 'main');
-	    exports.context = exports.canvas.getContext('2d');
-	    ppe.options.canvas = exports.canvas;
-	    var bloomCanvas = document.getElementById('bloom');
-	    bloomCanvas.width = exports.size.x / 2;
-	    bloomCanvas.height = exports.size.y / 2;
-	    exports.bloomContext = bloomCanvas.getContext('2d');
-	    var overlayCanvas = document.getElementById('overlay');
-	    overlayCanvas.width = exports.size.x;
-	    overlayCanvas.height = exports.size.y;
-	    exports.overlayContext = overlayCanvas.getContext('2d');
-	}
-	exports.init = init;
-	function clear() {
-	    p.background(exports.options.backgroundColor);
-	    exports.bloomContext.clearRect(0, 0, exports.size.x / 2, exports.size.y / 2);
-	    exports.overlayContext.clearRect(0, 0, exports.size.x, exports.size.y);
-	}
-	exports.clear = clear;
-	function drawBloomParticles() {
-	    var pts = ppe.getParticles();
-	    for (var i = 0; i < pts.length; i++) {
-	        var p_1 = pts[i];
-	        var r = Math.floor(Math.sqrt(p_1.color.r) * 255);
-	        var g = Math.floor(Math.sqrt(p_1.color.g) * 255);
-	        var b = Math.floor(Math.sqrt(p_1.color.b) * 255);
-	        var a = Math.max(p_1.color.r, p_1.color.g, p_1.color.b) * exports.options.bloomIntensity;
-	        exports.bloomContext.fillStyle = "rgba(" + r + "," + g + "," + b + ", " + a + ")";
-	        exports.bloomContext.fillRect((p_1.pos.x - p_1.size) / 2, (p_1.pos.y - p_1.size) / 2, p_1.size, p_1.size);
-	    }
-	}
-	exports.drawBloomParticles = drawBloomParticles;
 
 
 /***/ }

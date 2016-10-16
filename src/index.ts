@@ -31,6 +31,7 @@ function init() {
     Bullet.pixels = null;
   });
   player = new Player();
+  _.times(64, () => { new Star(); });
 }
 
 function update() {
@@ -46,9 +47,9 @@ function update() {
 
 class Player extends Actor {
   normalizedPos: p5.Vector = new p5.Vector();
-  fireInterval = 5;
+  fireInterval = 7;
   fireTicks = 0;
-  chasingSpeed = 2;
+  chasingSpeed = 1.5;
   ofs: p5.Vector = new p5.Vector();
 
   constructor() {
@@ -145,7 +146,7 @@ class Enemy extends Actor {
         break;
     }
     this.normalizedPos.y = -0.04;
-    this.firingInterval = 120 / Math.sqrt(loop.ticks * 0.01 + 1);
+    this.firingInterval = 150 / Math.sqrt(loop.ticks * 0.007 + 1);
     this.firingTicks = random.getInt(this.firingInterval);
     this.collision.set(8, 8);
     this.goToNextStep();
@@ -332,7 +333,7 @@ class Bullet extends Actor {
     ofs.set(player.normalizedPos);
     ofs.sub(pos);
     this.normalizedAngle = ofs.heading();
-    this.normalizedSpeed = get2DRandom(0.01, Math.sqrt(loop.ticks * 0.003 + 1) * 0.01);
+    this.normalizedSpeed = get2DRandom(0.01, Math.sqrt(loop.ticks * 0.002 + 1) * 0.01);
     this.context = screen.overlayContext;
   }
 
@@ -342,6 +343,28 @@ class Bullet extends Actor {
     setPosFromNormalizedPos(this);
     this.angle += 0.1;
     super.update();
+  }
+}
+
+class Star extends Actor {
+  color: string;
+
+  constructor() {
+    super();
+    this.pos.set(random.get(0, scrollScreenSizeX), random.get(0, screen.size.y));
+    this.vel.y = random.get(0.5, 2);
+    this.priority = 0;
+    this.color =
+      `rgb(${random.getInt(180, 250)},${random.getInt(180, 250)},${random.getInt(180, 250)})`;
+  }
+
+  update() {
+    super.update();
+    screen.context.fillStyle = this.color;
+    screen.context.fillRect(this.pos.x - scrollOffsetX, this.pos.y, 1, 1);
+    if (this.pos.y > screen.size.y) {
+      this.pos.y -= screen.size.y;
+    }
   }
 }
 
