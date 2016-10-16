@@ -110,10 +110,9 @@ class Shot extends Actor {
   update() {
     this.normalizedPos.y -= 0.04;
     setPosFromNormalizedPos(this);
-    _.forEach(this.testCollision('Enemy'), a => {
+    _.forEach<Enemy>(this.testCollision('Enemy') as Enemy[], a => {
       this.remove();
-      a.remove();
-      ppe.emit('e1', a.pos.x, a.pos.y);
+      a.destroy();
     });
     super.update();
   }
@@ -128,6 +127,7 @@ class Enemy extends Actor {
   firingTicks: number;
   firingInterval: number;
   normalizedPos: p5.Vector = new p5.Vector();
+  prevPos: p5.Vector = new p5.Vector();
 
   spawn() {
     this.pixels = this.flyingCurve.pixels;
@@ -183,6 +183,7 @@ class Enemy extends Actor {
   }
 
   update() {
+    this.prevPos.set(this.pos);
     const step = this.flyingCurve.steps[this.stepIndex];
     switch (step.curve.type) {
       case CurveType.sine:
@@ -234,6 +235,13 @@ class Enemy extends Actor {
       }
       this.goToNextStep();
     }
+  }
+
+  destroy() {
+    this.remove();
+    this.prevPos.sub(this.pos);
+    ppe.emit('e1', this.pos.x, this.pos.y,
+      0, 1, 1, null, -this.prevPos.x, -this.prevPos.y);
   }
 }
 
