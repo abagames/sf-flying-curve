@@ -19,7 +19,6 @@ let flyingCurve: FlyingCurve;
 
 function init() {
   p = loop.p;
-  screen.options.bloomIntensity = 0.2;
   screen.init(96, 128);
   scrollScreenSizeX = 128;
   ui.init(screen.canvas, screen.size);

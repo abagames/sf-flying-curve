@@ -8,7 +8,7 @@ export let bloomContext: CanvasRenderingContext2D;
 export let overlayContext: CanvasRenderingContext2D;
 export let options = {
   backgroundColor: 0,
-  bloomIntensity: 0.3
+  bloomIntensity: 0.2
 };
 
 let p5;
