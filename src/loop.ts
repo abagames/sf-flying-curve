@@ -26,6 +26,7 @@ export function init(_initFunc: () => void, _updateFunc: () => void) {
 export function enableDebug(onSeedChanged = null) {
   onSeedChangedFunc = onSeedChanged;
   debug.initSeedUi(sestSeeds);
+  debug.enableShowingErrors();
 }
 
 function setup() {

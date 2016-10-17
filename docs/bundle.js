@@ -17592,6 +17592,7 @@
 	    if (onSeedChanged === void 0) { onSeedChanged = null; }
 	    onSeedChangedFunc = onSeedChanged;
 	    debug.initSeedUi(sestSeeds);
+	    debug.enableShowingErrors();
 	}
 	exports.enableDebug = enableDebug;
 	function setup() {
@@ -18095,9 +18096,8 @@
 	"use strict";
 	function initSeedUi(onSeedChanged) {
 	    var p = document.createElement('p');
-	    p.innerHTML = '<button id="change">change</button>' +
-	        'random seed: <input type="number" id="seed" value="0"></input>' +
-	        '<button id="set">set</button>';
+	    p.innerHTML = "<button id=\"change\">change</button>\n    seed: <input type=\"number\" id=\"seed\" value=\"0\" style=\"width:80px\"></input>\n    <button id=\"set\">set</button>";
+	    p.style.textAlign = 'left';
 	    document.getElementsByTagName('body')[0].appendChild(p);
 	    var changeElm = document.getElementById('change');
 	    var seedElm = document.getElementById('seed');
@@ -18114,6 +18114,7 @@
 	exports.initSeedUi = initSeedUi;
 	function enableShowingErrors() {
 	    var pre = document.createElement('pre');
+	    pre.style.textAlign = 'left';
 	    document.getElementsByTagName('body')[0].appendChild(pre);
 	    window.addEventListener('error', function (error) {
 	        var message = [error.filename, '@', error.lineno, ':\n', error.message].join('');
