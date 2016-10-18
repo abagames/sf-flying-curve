@@ -57,6 +57,7 @@ export function init(_context: CanvasRenderingContext2D) {
 }
 
 export function draw(str: string, x: number, y: number) {
+  context.fillStyle = 'white';
   for (let i = 0; i < str.length; i++) {
     const idx = charToIndex[str.charCodeAt(i)];
     if (idx === -2) {

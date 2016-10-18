@@ -1,5 +1,6 @@
 import Actor from './actor';
 import * as screen from './screen';
+import * as text from './text';
 import * as debug from './debug';
 import * as pag from 'pag';
 import * as ppe from 'ppe';
@@ -8,6 +9,7 @@ declare const require: any;
 export const p5 = require('p5');
 export let p: p5;
 export let ticks = 0;
+export let score = 0;
 
 let initFunc: Function;
 let updateFunc: Function;
@@ -29,6 +31,10 @@ export function enableDebug(onSeedChanged = null) {
   debug.enableShowingErrors();
 }
 
+export function addScore(v: number) {
+  score += v;
+}
+
 function setup() {
   Actor.init();
   initFunc();
@@ -40,6 +46,7 @@ function draw() {
   screen.drawBloomParticles();
   updateFunc();
   Actor.update();
+  text.draw(`${score}`, 0, 0);
   ticks++;
 }
 

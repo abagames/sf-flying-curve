@@ -17570,11 +17570,13 @@
 	"use strict";
 	var actor_1 = __webpack_require__(1);
 	var screen = __webpack_require__(6);
+	var text = __webpack_require__(15);
 	var debug = __webpack_require__(8);
 	var pag = __webpack_require__(4);
 	var ppe = __webpack_require__(7);
 	exports.p5 = __webpack_require__(9);
 	exports.ticks = 0;
+	exports.score = 0;
 	var initFunc;
 	var updateFunc;
 	var onSeedChangedFunc;
@@ -17595,6 +17597,10 @@
 	    debug.enableShowingErrors();
 	}
 	exports.enableDebug = enableDebug;
+	function addScore(v) {
+	    exports.score += v;
+	}
+	exports.addScore = addScore;
 	function setup() {
 	    actor_1.default.init();
 	    initFunc();
@@ -17605,6 +17611,7 @@
 	    screen.drawBloomParticles();
 	    updateFunc();
 	    actor_1.default.update();
+	    text.draw("" + exports.score, 0, 0);
 	    exports.ticks++;
 	}
 	function sestSeeds(seed) {
@@ -17625,11 +17632,12 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var loop = __webpack_require__(5);
 	var ppe = __webpack_require__(7);
+	var loop = __webpack_require__(5);
+	var text = __webpack_require__(15);
 	exports.options = {
 	    backgroundColor: 0,
-	    bloomIntensity: 0.3
+	    bloomIntensity: 0.2
 	};
 	var p5;
 	var p;
@@ -17652,6 +17660,7 @@
 	    overlayCanvas.width = exports.size.x;
 	    overlayCanvas.height = exports.size.y;
 	    exports.overlayContext = overlayCanvas.getContext('2d');
+	    text.init(exports.overlayContext);
 	}
 	exports.init = init;
 	function clear() {
@@ -51186,7 +51195,6 @@
 	var flyingCurve;
 	function init() {
 	    p = loop.p;
-	    screen.options.bloomIntensity = 0.2;
 	    screen.init(96, 128);
 	    scrollScreenSizeX = 128;
 	    ui.init(screen.canvas, screen.size);
@@ -51394,6 +51402,7 @@
 	        this.remove();
 	        this.prevPos.sub(this.pos);
 	        ppe.emit('e1', this.pos.x, this.pos.y, 0, 1, 1, null, -this.prevPos.x, -this.prevPos.y);
+	        loop.addScore(1);
 	    };
 	    return Enemy;
 	}(actor_1.default));
@@ -54042,6 +54051,7 @@
 	}
 	exports.init = init;
 	function draw(str, x, y) {
+	    context.fillStyle = 'white';
 	    for (var i = 0; i < str.length; i++) {
 	        var idx = charToIndex[str.charCodeAt(i)];
 	        if (idx === -2) {

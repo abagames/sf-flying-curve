@@ -1,5 +1,6 @@
-import * as loop from './loop';
 import * as ppe from 'ppe';
+import * as loop from './loop';
+import * as text from './text';
 
 export let size: p5.Vector;
 export let canvas: HTMLCanvasElement;
@@ -31,6 +32,7 @@ export function init(x: number = 128, y: number = 128) {
   overlayCanvas.width = size.x;
   overlayCanvas.height = size.y;
   overlayContext = overlayCanvas.getContext('2d');
+  text.init(overlayContext);
 }
 
 export function clear() {

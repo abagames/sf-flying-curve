@@ -239,6 +239,7 @@ class Enemy extends Actor {
     this.prevPos.sub(this.pos);
     ppe.emit('e1', this.pos.x, this.pos.y,
       0, 1, 1, null, -this.prevPos.x, -this.prevPos.y);
+    loop.addScore(1);
   }
 }
 
