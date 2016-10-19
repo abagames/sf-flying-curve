@@ -8,7 +8,7 @@ import * as screen from './screen';
 
 let p5 = loop.p5;
 let p: p5;
-let random = new Random();
+let random: Random;
 
 loop.init(init, update);
 
@@ -19,6 +19,7 @@ let flyingCurve: FlyingCurve;
 
 function init() {
   p = loop.p;
+  random = loop.random;
   screen.init(96, 128);
   scrollScreenSizeX = 128;
   ui.init(screen.canvas, screen.size);

@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import * as pag from 'pag';
+import * as ir from 'ir';
 import * as loop from './loop';
 import * as screen from './screen';
 
@@ -19,6 +20,7 @@ export default class Actor {
   type: string;
   collision: p5.Vector = new p5.Vector();
   context: CanvasRenderingContext2D = screen.context;
+  replayPropertyNames = [];
 
   constructor() {
     Actor.add(this);
@@ -68,6 +70,14 @@ export default class Actor {
     }
   }
 
+  getReplayStatus() {
+    return ir.objectToArray(this, this.replayPropertyNames);
+  }
+
+  setReplayStatus(status) {
+    ir.arrayToObject(status, this.replayPropertyNames, this);
+  }
+
   static actors: any[];
 
   static init() {
@@ -107,5 +117,21 @@ export default class Actor {
 
   static get(type: string) {
     return _.filter<Actor>(Actor.actors, a => a.type === type);
+  }
+
+  static getReplayStatus() {
+    return _.map(Actor.actors, (a: Actor) => {
+      let array = a.getReplayStatus();
+      array.unshift(a.type);
+      return array;
+    });
+  }
+
+  static setReplayStatus(status: any[], classGenerator) {
+    _.forEach(status, s => {
+      let actor: Actor = classGenerator(status[0]);
+      status.shift();
+      Actor.actors.push(actor.setReplayStatus(status));
+    });
   }
 }

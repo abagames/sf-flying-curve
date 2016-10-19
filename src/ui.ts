@@ -1,15 +1,16 @@
 import * as sss from 'sss';
 import * as loop from './loop';
 
-let p5 = loop.p5;
-export let cursorPos: p5.Vector = new p5.Vector();
-export let targetPos: p5.Vector = new p5.Vector();
+let p5;
+export let cursorPos: p5.Vector;
+export let targetPos: p5.Vector;
 export let isPressing = false;
 export let isPressed = false;
 let canvas: HTMLCanvasElement;
 let pixelSize: p5.Vector;
-let currentTargetPos: p5.Vector = new p5.Vector();
-let prevCursorPos: p5.Vector = new p5.Vector();
+let currentTargetPos: p5.Vector;
+let prevCursorPos: p5.Vector;
+let intTargetPos: p5.Vector;
 
 export function init(_canvas: HTMLCanvasElement, _pixelSize: p5.Vector) {
   canvas = _canvas;
@@ -33,10 +34,35 @@ export function init(_canvas: HTMLCanvasElement, _pixelSize: p5.Vector) {
   document.ontouchend = (e) => {
     onMouseTouchUp(e);
   };
+  p5 = loop.p5;
+  cursorPos = new p5.Vector();
+  targetPos = new p5.Vector();
+  currentTargetPos = new p5.Vector();
+  prevCursorPos = new p5.Vector();
+  intTargetPos = new p5.Vector();
 }
 
 export function setCurrentTargetPos(_currentTargetPos: p5.Vector) {
   currentTargetPos = _currentTargetPos;
+}
+
+export function getTargetPos() {
+  intTargetPos.set(Math.round(targetPos.x), Math.round(targetPos.y));
+  return intTargetPos;
+}
+
+export function resetPressed() {
+  isPressed = false;
+}
+
+export function getReplayEvents() {
+  const tp = getTargetPos();
+  return [tp.x, tp.y];
+}
+
+export function setReplayEvents(events) {
+  targetPos.x = events[0];
+  targetPos.y = events[1];
 }
 
 function onMouseTouchDown(x, y) {
