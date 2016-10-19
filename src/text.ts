@@ -56,8 +56,11 @@ export function init(_context: CanvasRenderingContext2D) {
   }
 }
 
-export function draw(str: string, x: number, y: number) {
+export function draw(str: string, x: number, y: number, isAlignCenter = false) {
   context.fillStyle = 'white';
+  if (isAlignCenter) {
+    x -= str.length * 5 / 2;
+  }
   for (let i = 0; i < str.length; i++) {
     const idx = charToIndex[str.charCodeAt(i)];
     if (idx === -2) {
