@@ -49,8 +49,10 @@ export function setTitle(_title: string) {
   title = _title;
 }
 
-export function setReplayFuncs(_actorGeneratorFunc: (type: string, status: any) => void,
-  _getReplayStatusFunc: () => any, _setReplayStatusFunc: (status: any) => void) {
+export function setReplayFuncs(
+  _actorGeneratorFunc: (type: string, status: any) => void,
+  _getReplayStatusFunc: () => any = null,
+  _setReplayStatusFunc: (status: any) => void = null) {
   actorGeneratorFunc = _actorGeneratorFunc;
   getReplayStatusFunc = _getReplayStatusFunc;
   setReplayStatusFunc = _setReplayStatusFunc;
@@ -166,12 +168,18 @@ function handleScene() {
 }
 
 function getStatus() {
-  return [ticks, score, random.getStatus(), Actor.getReplayStatus(), getReplayStatusFunc()];
+  const status = [ticks, score, random.getStatus(), Actor.getReplayStatus()];
+  if (getReplayStatusFunc != null) {
+    status.push(getReplayStatusFunc());
+  }
+  return status;
 }
 
 function setStatus(status) {
   Actor.setReplayStatus(status[3], actorGeneratorFunc);
-  setReplayStatusFunc(status[4]);
+  if (setReplayStatusFunc != null) {
+    setReplayStatusFunc(status[4]);
+  }
   ticks = status[0];
   score = status[1];
   random.setStatus(status[2]);
