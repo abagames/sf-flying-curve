@@ -53959,10 +53959,10 @@
 	    });
 	}
 	function update() {
-	    if (loop.ticks % 200 === 0) {
+	    if (loop.ticks % 240 === 0) {
 	        flyingCurve = new FlyingCurve();
 	    }
-	    if (loop.ticks % 200 < 120 && loop.ticks % 12 === 0) {
+	    if (loop.ticks % 240 < 120 && loop.ticks % 12 === 0) {
 	        var e = new Enemy();
 	        e.flyingCurve = flyingCurve;
 	        e.spawn();
@@ -54288,7 +54288,7 @@
 	        }
 	        this.collision.set(4, 4);
 	        setPosFromNormalizedPos(this);
-	        ppe.emit('m2', this.pos.x, this.pos.y, this.normalizedAngle, 0.5);
+	        ppe.emit('m2', this.pos.x, this.pos.y, this.normalizedAngle, 0.75);
 	        sss.play('l2', 3);
 	    }
 	    Bullet.prototype.update = function () {
