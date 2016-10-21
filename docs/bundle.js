@@ -18313,16 +18313,16 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
+	var pag = __webpack_require__(4);
+	var ppe = __webpack_require__(8);
+	var sss = __webpack_require__(11);
+	var ir = __webpack_require__(5);
 	var actor_1 = __webpack_require__(1);
 	var screen = __webpack_require__(7);
 	var text = __webpack_require__(9);
 	var ui = __webpack_require__(10);
 	var random_1 = __webpack_require__(12);
 	var debug = __webpack_require__(13);
-	var pag = __webpack_require__(4);
-	var ppe = __webpack_require__(8);
-	var sss = __webpack_require__(11);
-	var ir = __webpack_require__(5);
 	exports.p5 = __webpack_require__(14);
 	exports.ticks = 0;
 	exports.score = 0;
@@ -18361,6 +18361,8 @@
 	}
 	exports.setTitle = setTitle;
 	function setReplayFuncs(_actorGeneratorFunc, _getReplayStatusFunc, _setReplayStatusFunc) {
+	    if (_getReplayStatusFunc === void 0) { _getReplayStatusFunc = null; }
+	    if (_setReplayStatusFunc === void 0) { _setReplayStatusFunc = null; }
 	    actorGeneratorFunc = _actorGeneratorFunc;
 	    getReplayStatusFunc = _getReplayStatusFunc;
 	    setReplayStatusFunc = _setReplayStatusFunc;
@@ -18477,11 +18479,17 @@
 	    }
 	}
 	function getStatus() {
-	    return [exports.ticks, exports.score, exports.random.getStatus(), actor_1.default.getReplayStatus(), getReplayStatusFunc()];
+	    var status = [exports.ticks, exports.score, exports.random.getStatus(), actor_1.default.getReplayStatus()];
+	    if (getReplayStatusFunc != null) {
+	        status.push(getReplayStatusFunc());
+	    }
+	    return status;
 	}
 	function setStatus(status) {
 	    actor_1.default.setReplayStatus(status[3], actorGeneratorFunc);
-	    setReplayStatusFunc(status[4]);
+	    if (setReplayStatusFunc != null) {
+	        setReplayStatusFunc(status[4]);
+	    }
 	    exports.ticks = status[0];
 	    exports.score = status[1];
 	    exports.random.setStatus(status[2]);
@@ -18490,13 +18498,16 @@
 	    pag.setSeed(seed);
 	    ppe.setSeed(seed);
 	    ppe.reset();
-	    /*sss.reset();
+	    sss.reset();
 	    sss.setSeed(seed);
-	    if (scene === Scene.game) {
-	      sss.playBgm();
-	    }*/
-	    onSeedChangedFunc();
+	    if (exports.scene === Scene.game) {
+	        sss.playBgm();
+	    }
+	    if (onSeedChangedFunc != null) {
+	        onSeedChangedFunc();
+	    }
 	}
+	exports.setSeeds = setSeeds;
 
 
 /***/ },
@@ -53907,6 +53918,7 @@
 	};
 	var _ = __webpack_require__(2);
 	var ppe = __webpack_require__(8);
+	var sss = __webpack_require__(11);
 	var loop = __webpack_require__(6);
 	var actor_1 = __webpack_require__(1);
 	var random_1 = __webpack_require__(12);
@@ -53926,11 +53938,12 @@
 	    screen.init(96, 128);
 	    loop.setTitle('SF FLYING CURVE');
 	    loop.setReplayFuncs(generateActor, getReplayStatus, setReplayStatus);
-	    loop.enableDebug(function () {
-	        player.setPixels();
-	        Shot.pixels = null;
-	        Bullet.pixels = null;
-	    });
+	    loop.setSeeds(7589781);
+	    /*loop.enableDebug(() => {
+	      player.setPixels();
+	      Shot.pixels = null;
+	      Bullet.pixels = null;
+	    });*/
 	}
 	function initGame() {
 	    if (loop.scene !== loop.Scene.replay) {
@@ -54004,6 +54017,7 @@
 	            this.testCollision('Bullet').length > 0) {
 	            this.remove();
 	            ppe.emit('e2', this.pos.x, this.pos.y, 0, 2, 2);
+	            sss.play('u1', 4);
 	            loop.endGame();
 	        }
 	    };
@@ -54028,6 +54042,7 @@
 	        setPosFromNormalizedPos(this);
 	        ppe.emit('m1', this.pos.x - 4, this.pos.y - 2, -p.HALF_PI, 0.25);
 	        ppe.emit('m1', this.pos.x + 4, this.pos.y - 2, -p.HALF_PI, 0.25);
+	        sss.play('l1');
 	    }
 	    Shot.prototype.update = function () {
 	        var _this = this;
@@ -54168,6 +54183,7 @@
 	        this.prevPos.sub(this.pos);
 	        ppe.emit('e1', this.pos.x, this.pos.y, 0, 1, 1, null, -this.prevPos.x, -this.prevPos.y);
 	        loop.addScore(1);
+	        sss.play('e1');
 	    };
 	    return Enemy;
 	}(actor_1.default));
@@ -54176,7 +54192,6 @@
 	        if (seed === void 0) { seed = null; }
 	        this.velScale = new p5.Vector(1, 1);
 	        this.seed = seed == null ? random.getToMaxInt() : seed;
-	        console.log(this.seed);
 	        this.random = new random_1.default();
 	        this.random.setSeed(this.seed);
 	        this.generate();
@@ -54274,6 +54289,7 @@
 	        this.collision.set(4, 4);
 	        setPosFromNormalizedPos(this);
 	        ppe.emit('m2', this.pos.x, this.pos.y, this.normalizedAngle, 0.5);
+	        sss.play('l2', 3);
 	    }
 	    Bullet.prototype.update = function () {
 	        this.normalizedPos.x += Math.cos(this.normalizedAngle) * this.normalizedSpeed;

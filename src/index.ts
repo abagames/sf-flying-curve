@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import * as ppe from 'ppe';
+import * as sss from 'sss';
 import * as loop from './loop';
 import Actor from './actor';
 import Random from './random';
@@ -23,11 +24,12 @@ function init() {
   screen.init(96, 128);
   loop.setTitle('SF FLYING CURVE');
   loop.setReplayFuncs(generateActor, getReplayStatus, setReplayStatus);
-  loop.enableDebug(() => {
+  loop.setSeeds(7589781);
+  /*loop.enableDebug(() => {
     player.setPixels();
     Shot.pixels = null;
     Bullet.pixels = null;
-  });
+  });*/
 }
 
 function initGame() {
@@ -108,6 +110,7 @@ class Player extends Actor {
       this.testCollision('Bullet').length > 0) {
       this.remove();
       ppe.emit('e2', this.pos.x, this.pos.y, 0, 2, 2);
+      sss.play('u1', 4);
       loop.endGame();
     }
   }
@@ -132,6 +135,7 @@ class Shot extends Actor {
     setPosFromNormalizedPos(this);
     ppe.emit('m1', this.pos.x - 4, this.pos.y - 2, -p.HALF_PI, 0.25);
     ppe.emit('m1', this.pos.x + 4, this.pos.y - 2, -p.HALF_PI, 0.25);
+    sss.play('l1');
   }
 
   update() {
@@ -283,6 +287,7 @@ class Enemy extends Actor {
     ppe.emit('e1', this.pos.x, this.pos.y,
       0, 1, 1, null, -this.prevPos.x, -this.prevPos.y);
     loop.addScore(1);
+    sss.play('e1');
   }
 }
 
@@ -296,7 +301,6 @@ class FlyingCurve {
 
   constructor(seed: number = null) {
     this.seed = seed == null ? random.getToMaxInt() : seed;
-    console.log(this.seed);
     this.random = new Random();
     this.random.setSeed(this.seed);
     this.generate();
@@ -391,6 +395,7 @@ class Bullet extends Actor {
     this.collision.set(4, 4);
     setPosFromNormalizedPos(this);
     ppe.emit('m2', this.pos.x, this.pos.y, this.normalizedAngle, 0.5);
+    sss.play('l2', 3);
   }
 
   update() {

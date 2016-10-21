@@ -1,13 +1,13 @@
+import * as pag from 'pag';
+import * as ppe from 'ppe';
+import * as sss from 'sss';
+import * as ir from 'ir';
 import Actor from './actor';
 import * as screen from './screen';
 import * as text from './text';
 import * as ui from './ui';
 import Random from './random';
 import * as debug from './debug';
-import * as pag from 'pag';
-import * as ppe from 'ppe';
-import * as sss from 'sss';
-import * as ir from 'ir';
 
 declare const require: any;
 export const p5 = require('p5');
@@ -185,14 +185,16 @@ function setStatus(status) {
   random.setStatus(status[2]);
 }
 
-function setSeeds(seed: number) {
+export function setSeeds(seed: number) {
   pag.setSeed(seed);
   ppe.setSeed(seed);
   ppe.reset();
-  /*sss.reset();
+  sss.reset();
   sss.setSeed(seed);
   if (scene === Scene.game) {
     sss.playBgm();
-  }*/
-  onSeedChangedFunc();
+  }
+  if (onSeedChangedFunc != null) {
+    onSeedChangedFunc();
+  }
 }
