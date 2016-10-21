@@ -10,10 +10,10 @@ let p5 = loop.p5;
 let p: p5;
 let random: Random;
 
-loop.init(init, update);
+loop.init(init, initGame, update);
 
-let scrollScreenSizeX: number;
-let scrollOffsetX = 0;
+const scrollScreenSizeX = 128;
+let scrollOffsetX: number;
 let player: Player;
 let flyingCurve: FlyingCurve;
 
@@ -21,17 +21,27 @@ function init() {
   p = loop.p;
   random = loop.random;
   screen.init(96, 128);
-  scrollScreenSizeX = 128;
-  ui.init(screen.canvas, screen.size);
-  p.fill(255);
-  p.noStroke();
+  loop.setTitle('SF FLYING CURVE');
+  loop.setReplayFuncs(generateActor, getReplayStatus, setReplayStatus);
   loop.enableDebug(() => {
     player.setPixels();
     Shot.pixels = null;
     Bullet.pixels = null;
   });
-  player = new Player();
-  _.times(64, () => { new Star(); });
+}
+
+function initGame() {
+  if (loop.scene !== loop.Scene.replay) {
+    player = new Player();
+  }
+  if (loop.scene === loop.Scene.title) {
+    player.isVisible = false;
+  }
+  scrollOffsetX = 0;
+  flyingCurve = new FlyingCurve();
+  _.times(64, () => {
+    new Star();
+  });
 }
 
 function update() {
@@ -51,13 +61,16 @@ class Player extends Actor {
   fireTicks = 0;
   chasingSpeed = 1.5;
   ofs: p5.Vector = new p5.Vector();
+  isVisible = true;
 
   constructor() {
     super();
+    this.replayPropertyNames = ['pos.x', 'pos.y', 'fireTicks'];
     this.pos.set(screen.size.x / 2, screen.size.y * 0.8);
     ui.setCurrentTargetPos(this.pos);
     this.setPixels();
     this.angle = -p.HALF_PI;
+    this.collision.set(1, 1);
   }
 
   setPixels() {
@@ -65,11 +78,15 @@ class Player extends Actor {
   }
 
   update() {
-    this.ofs.set(ui.targetPos);
+    if (!this.isVisible) {
+      this.normalizedPos.set(this.pos.x / screen.size.x, this.pos.y / screen.size.y);
+      return;
+    }
+    this.ofs.set(ui.getTargetPos());
     this.ofs.sub(this.pos);
     let d = this.ofs.mag();
     if (d <= this.chasingSpeed) {
-      this.pos.set(ui.targetPos);
+      this.pos.set(ui.getTargetPos());
     } else {
       this.ofs.div(d / this.chasingSpeed);
       this.pos.add(this.ofs);
@@ -87,6 +104,12 @@ class Player extends Actor {
       new Shot(this.normalizedPos);
       this.fireTicks = this.fireInterval;
     }
+    if (this.testCollision('Enemy').length > 0 ||
+      this.testCollision('Bullet').length > 0) {
+      this.remove();
+      ppe.emit('e2', this.pos.x, this.pos.y, 0, 2, 2);
+      loop.endGame();
+    }
   }
 }
 
@@ -94,15 +117,21 @@ class Shot extends Actor {
   static pixels;
   normalizedPos: p5.Vector = new p5.Vector();
 
-  constructor(pos: p5.Vector) {
+  constructor(pos: p5.Vector = null) {
     super();
+    this.replayPropertyNames = ['normalizedPos.x', 'normalizedPos.y'];
     if (Shot.pixels == null) {
       Shot.pixels = Actor.generatePixels(['xx', ''], { isMirrorX: true });
     }
     this.pixels = Shot.pixels;
-    this.normalizedPos.set(pos);
+    if (pos != null) {
+      this.normalizedPos.set(pos);
+    }
     this.angle = -p.HALF_PI;
     this.collision.set(10, 10);
+    setPosFromNormalizedPos(this);
+    ppe.emit('m1', this.pos.x - 4, this.pos.y - 2, -p.HALF_PI, 0.25);
+    ppe.emit('m1', this.pos.x + 4, this.pos.y - 2, -p.HALF_PI, 0.25);
   }
 
   update() {
@@ -127,9 +156,19 @@ class Enemy extends Actor {
   normalizedPos: p5.Vector = new p5.Vector();
   prevPos: p5.Vector = new p5.Vector();
 
-  spawn() {
-    this.pixels = this.flyingCurve.pixels;
+  constructor() {
+    super();
+    this.replayPropertyNames =
+      ['normalizedPos.x', 'normalizedPos.y', 'vel.x', 'vel.y',
+        'flyingCurve.seed',
+        'stepIndex', 'sineAngle', 'sineCenterX', 'yWay',
+        'firingTicks', 'firingInterval'];
+    this.collision.set(8, 8);
     this.angle = p.HALF_PI;
+  }
+
+  spawn() {
+    this.setPixels();
     switch (this.flyingCurve.spawnType) {
       case SpawnType.random:
         this.normalizedPos.x = random.get();
@@ -146,9 +185,8 @@ class Enemy extends Actor {
         break;
     }
     this.normalizedPos.y = -0.04;
-    this.firingInterval = 150 / Math.sqrt(loop.ticks * 0.007 + 1);
+    this.firingInterval = Math.floor(150 / Math.sqrt(loop.ticks * 0.007 + 1));
     this.firingTicks = random.getInt(this.firingInterval);
-    this.collision.set(8, 8);
     this.goToNextStep();
   }
 
@@ -178,6 +216,10 @@ class Enemy extends Actor {
         this.vel.div(t);
         break;
     }
+  }
+
+  setPixels() {
+    this.pixels = this.flyingCurve.pixels;
   }
 
   update() {
@@ -249,31 +291,46 @@ class FlyingCurve {
   spawnType: SpawnType;
   velScale: p5.Vector = new p5.Vector(1, 1);
   pixels;
+  seed: number;
+  random: Random;
 
-  constructor() {
+  constructor(seed: number = null) {
+    this.seed = seed == null ? random.getToMaxInt() : seed;
+    console.log(this.seed);
+    this.random = new Random();
+    this.random.setSeed(this.seed);
     this.generate();
     this.pixels = Actor.generatePixels([' --', '-xx-'],
-      { seed: random.getToMaxInt(), hue: 0.2 });
+      { seed: this.random.getToMaxInt(), hue: 0.2 });
   }
 
   generate() {
     this.steps = [];
-    const sc = random.getInt(1, 4);
+    const sc = this.random.getInt(1, 4);
     this.steps = _.times(sc, () => {
       const step = new Step();
-      step.curve.type = getRandomEnum(CurveType);
-      step.curve.angleSpeed = get2DRandom(0.01, 0.15);
-      step.curve.width = get2DRandom(0.1, 0.5);
-      step.ySpeed = get2DRandom(0.005, 0.015);
-      step.trigger.type = getRandomEnum(TriggerType, 1);
-      step.trigger.isReverseYWay = random.get() < 0.5;
-      step.isFiring = sc === 1 || random.get() < 0.75;
+      step.curve.type = this.getRandomEnum(CurveType);
+      step.curve.angleSpeed = this.get2DRandom(0.01, 0.15);
+      step.curve.width = this.get2DRandom(0.1, 0.5);
+      step.ySpeed = this.get2DRandom(0.005, 0.015);
+      step.trigger.type = this.getRandomEnum(TriggerType, 1);
+      step.trigger.isReverseYWay = this.random.get() < 0.5;
+      step.isFiring = sc === 1 || this.random.get() < 0.75;
       return step;
     });
     this.steps[this.steps.length - 1].trigger.type = TriggerType.none;
-    this.spawnType = getRandomEnum(SpawnType);
-    this.velScale.x = get2DRandom(0.5, 1.5);
-    this.velScale.y = get2DRandom(0.5, 1.5);
+    this.spawnType = this.getRandomEnum(SpawnType);
+    this.velScale.x = this.get2DRandom(0.5, 1.5);
+    this.velScale.y = this.get2DRandom(0.5, 1.5);
+  }
+
+  get2DRandom(from: number, to: number) {
+    const o = (to - from) / 2;
+    return this.random.get() * o + this.random.get() * o + from;
+  }
+
+  getRandomEnum(obj, offset = 0) {
+    return obj[obj[this.random.getInt(_.keys(obj).length / 2 - offset)]];
   }
 }
 
@@ -307,35 +364,33 @@ enum SpawnType {
   random, oppositeX
 }
 
-function get2DRandom(from: number, to: number) {
-  const o = (to - from) / 2;
-  return random.get() * o + random.get() * o + from;
-}
-
-function getRandomEnum(obj, offset = 0) {
-  return obj[obj[random.getInt(_.keys(obj).length / 2 - offset)]];
-}
-
 class Bullet extends Actor {
   static pixels;
   normalizedPos: p5.Vector = new p5.Vector();
   normalizedAngle: number;
   normalizedSpeed: number;
 
-  constructor(pos: p5.Vector) {
+  constructor(pos: p5.Vector = null) {
     super();
+    this.replayPropertyNames =
+      ['normalizedPos.x', 'normalizedPos.y', 'normalizedAngle', 'normalizedSpeed'];
     if (Bullet.pixels == null) {
       Bullet.pixels = Actor.generatePixels([' x', 'xx'],
         { scale: 1, hue: 0.1, isMirrorX: true });
     }
     this.pixels = Bullet.pixels;
-    this.normalizedPos.set(pos);
-    let ofs: p5.Vector = new p5.Vector();
-    ofs.set(player.normalizedPos);
-    ofs.sub(pos);
-    this.normalizedAngle = ofs.heading();
-    this.normalizedSpeed = get2DRandom(0.01, Math.sqrt(loop.ticks * 0.002 + 1) * 0.01);
     this.context = screen.overlayContext;
+    if (pos != null) {
+      this.normalizedPos.set(pos);
+      let ofs: p5.Vector = new p5.Vector();
+      ofs.set(player.normalizedPos);
+      ofs.sub(pos);
+      this.normalizedAngle = ofs.heading();
+      this.normalizedSpeed = random.get(0.01, Math.sqrt(loop.ticks * 0.002 + 1) * 0.01);
+    }
+    this.collision.set(4, 4);
+    setPosFromNormalizedPos(this);
+    ppe.emit('m2', this.pos.x, this.pos.y, this.normalizedAngle, 0.5);
   }
 
   update() {
@@ -376,4 +431,34 @@ function setPosFromNormalizedPos(actor) {
     actor.normalizedPos.y < -0.05 || actor.normalizedPos.y > 1.05) {
     actor.remove();
   }
+}
+
+function generateActor(type, status) {
+  let actor: any;
+  switch (type) {
+    case 'Player':
+      player = actor = new Player();
+      break;
+    case 'Shot':
+      actor = new Shot();
+      break;
+    case 'Enemy':
+      actor = new Enemy();
+      actor.setReplayStatus(status);
+      actor.flyingCurve = new FlyingCurve(actor.flyingCurve.seed);
+      actor.setPixels();
+      break;
+    case 'Bullet':
+      actor = new Bullet();
+      break;
+  }
+  actor.setReplayStatus(status);
+}
+
+function getReplayStatus() {
+  return [flyingCurve.seed];
+}
+
+function setReplayStatus(status) {
+  flyingCurve = new FlyingCurve(status[0]);
 }

@@ -18,22 +18,26 @@ export let random: Random;
 export let scene: Scene;
 
 let initFunc: Function;
+let initGameFunc: Function;
 let updateFunc: Function;
 let onSeedChangedFunc: Function;
-let classGeneratorFunc: Function;
+let actorGeneratorFunc: Function;
+let getReplayStatusFunc: Function;
+let setReplayStatusFunc: Function;
 let title: string = 'N/A';
 let isDebugEnabled = false;
 
-enum Scene {
+export enum Scene {
   title, game, gameover, replay
 };
 
-export function init(_initFunc: () => void, _updateFunc: () => void) {
+export function init
+  (_initFunc: () => void, _initGameFunc: () => void, _updateFunc: () => void) {
   initFunc = _initFunc;
+  initGameFunc = _initGameFunc;
   updateFunc = _updateFunc;
   random = new Random();
   sss.init();
-  scene = Scene.title;
   new p5(_p => {
     p = _p;
     p.setup = setup;
@@ -45,8 +49,11 @@ export function setTitle(_title: string) {
   title = _title;
 }
 
-export function setClassGeneratorFunc(_classGeneratorFunc) {
-  classGeneratorFunc = _classGeneratorFunc;
+export function setReplayFuncs(_actorGeneratorFunc: (type: string, status: any) => void,
+  _getReplayStatusFunc: () => any, _setReplayStatusFunc: (status: any) => void) {
+  actorGeneratorFunc = _actorGeneratorFunc;
+  getReplayStatusFunc = _getReplayStatusFunc;
+  setReplayStatusFunc = _setReplayStatusFunc;
 }
 
 export function enableDebug(_onSeedChangedFunc = null) {
@@ -54,7 +61,6 @@ export function enableDebug(_onSeedChangedFunc = null) {
   debug.initSeedUi(setSeeds);
   debug.enableShowingErrors();
   isDebugEnabled = true;
-  beginGame();
 }
 
 export function beginGame() {
@@ -63,16 +69,20 @@ export function beginGame() {
   sss.playBgm();
   ir.startRecord();
   Actor.clear();
+  initGameFunc();
 }
 
 export function endGame() {
-  if (scene === Scene.gameover || scene === Scene.replay) {
+  if (scene === Scene.gameover) {
     return;
   }
+  let isReplay = scene === Scene.replay;
   scene = Scene.gameover;
   ticks = 0;
   sss.stopBgm();
-  ir.saveAsUrl();
+  if (!isReplay) {
+    ir.saveAsUrl();
+  }
 }
 
 export function beginTitle() {
@@ -83,10 +93,10 @@ export function beginTitle() {
 export function beginReplay() {
   const status = ir.startReplay();
   if (status !== false) {
-    setStatus(status);
     scene = Scene.replay;
-  } else {
-    beginTitle();
+    Actor.clear();
+    initGameFunc();
+    setStatus(status);
   }
 }
 
@@ -99,6 +109,17 @@ export function addScore(v: number) {
 function setup() {
   Actor.init();
   initFunc();
+  ui.init(screen.canvas, screen.size);
+  if (isDebugEnabled) {
+    beginGame();
+  } else {
+    if (ir.loadFromUrl() === true) {
+      beginReplay();
+    } else {
+      beginTitle();
+      initGameFunc();
+    }
+  }
 }
 
 function draw() {
@@ -122,19 +143,19 @@ function handleScene() {
     ir.record(getStatus(), ui.getReplayEvents());
   }
   if (scene === Scene.gameover) {
-    text.draw('GAME OVER', 64, 60, true);
-    if (ticks >= 60) {
+    text.draw('GAME OVER', screen.size.x / 2, screen.size.y * 0.45, true);
+    if (ticks === 60) {
       beginTitle();
     }
   }
   if (scene === Scene.title) {
-    text.draw(title, 64, 60, true);
-    if (ticks >= 120) {
+    text.draw(title, screen.size.x / 2, screen.size.y * 0.45, true);
+    if (ticks === 120) {
       beginReplay();
     }
   }
   if (scene === Scene.replay) {
-    text.draw('REPLAY', 64, 70, true);
+    text.draw('REPLAY', screen.size.x / 2, screen.size.y * 0.55, true);
     const events = ir.getEvents();
     if (events !== false) {
       ui.setReplayEvents(events);
@@ -145,14 +166,15 @@ function handleScene() {
 }
 
 function getStatus() {
-  return [ticks, score, random.getStatus(), Actor.getReplayStatus()];
+  return [ticks, score, random.getStatus(), Actor.getReplayStatus(), getReplayStatusFunc()];
 }
 
 function setStatus(status) {
+  Actor.setReplayStatus(status[3], actorGeneratorFunc);
+  setReplayStatusFunc(status[4]);
   ticks = status[0];
   score = status[1];
   random.setStatus(status[2]);
-  Actor.setReplayStatus(status[3], classGeneratorFunc);
 }
 
 function setSeeds(seed: number) {

@@ -61,6 +61,8 @@ export function draw(str: string, x: number, y: number, isAlignCenter = false) {
   if (isAlignCenter) {
     x -= str.length * 5 / 2;
   }
+  x = Math.floor(x);
+  y = Math.floor(y);
   for (let i = 0; i < str.length; i++) {
     const idx = charToIndex[str.charCodeAt(i)];
     if (idx === -2) {

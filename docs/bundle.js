@@ -78,7 +78,6 @@
 	        this.ticks = 0;
 	        this.collision = new p5.Vector();
 	        this.context = screen.context;
-	        this.replayPropertyNames = [];
 	        Actor.add(this);
 	        this.type = ('' + this.constructor).replace(/^\s*function\s*([^\(]*)[\S\s]+$/im, '$1');
 	    }
@@ -122,6 +121,9 @@
 	        }
 	    };
 	    Actor.prototype.getReplayStatus = function () {
+	        if (this.replayPropertyNames == null) {
+	            return null;
+	        }
 	        return ir.objectToArray(this, this.replayPropertyNames);
 	    };
 	    Actor.prototype.setReplayStatus = function (status) {
@@ -163,17 +165,18 @@
 	        return _.filter(Actor.actors, function (a) { return a.type === type; });
 	    };
 	    Actor.getReplayStatus = function () {
-	        return _.map(Actor.actors, function (a) {
+	        var status = [];
+	        _.forEach(Actor.actors, function (a) {
 	            var array = a.getReplayStatus();
-	            array.unshift(a.type);
-	            return array;
+	            if (array != null) {
+	                status.push([a.type, array]);
+	            }
 	        });
+	        return status;
 	    };
-	    Actor.setReplayStatus = function (status, classGenerator) {
+	    Actor.setReplayStatus = function (status, actorGeneratorFunc) {
 	        _.forEach(status, function (s) {
-	            var actor = classGenerator(status[0]);
-	            status.shift();
-	            Actor.actors.push(actor.setReplayStatus(status));
+	            actorGeneratorFunc(s[0], s[1]);
 	        });
 	    };
 	    return Actor;
@@ -17729,7 +17732,10 @@
 		        var o = object;
 		        for (var j = 0; j < ps.length; j++) {
 		            if (j < ps.length - 1) {
-		                o = o[ps[j]] = {};
+		                if (o[ps[j]] == null) {
+		                    o[ps[j]] = {};
+		                }
+		                o = o[ps[j]];
 		            }
 		            else {
 		                o[ps[j]] = array[i];
@@ -18321,25 +18327,28 @@
 	exports.ticks = 0;
 	exports.score = 0;
 	var initFunc;
+	var initGameFunc;
 	var updateFunc;
 	var onSeedChangedFunc;
-	var classGeneratorFunc;
+	var actorGeneratorFunc;
+	var getReplayStatusFunc;
+	var setReplayStatusFunc;
 	var title = 'N/A';
 	var isDebugEnabled = false;
-	var Scene;
 	(function (Scene) {
 	    Scene[Scene["title"] = 0] = "title";
 	    Scene[Scene["game"] = 1] = "game";
 	    Scene[Scene["gameover"] = 2] = "gameover";
 	    Scene[Scene["replay"] = 3] = "replay";
-	})(Scene || (Scene = {}));
+	})(exports.Scene || (exports.Scene = {}));
+	var Scene = exports.Scene;
 	;
-	function init(_initFunc, _updateFunc) {
+	function init(_initFunc, _initGameFunc, _updateFunc) {
 	    initFunc = _initFunc;
+	    initGameFunc = _initGameFunc;
 	    updateFunc = _updateFunc;
 	    exports.random = new random_1.default();
 	    sss.init();
-	    exports.scene = Scene.title;
 	    new exports.p5(function (_p) {
 	        exports.p = _p;
 	        exports.p.setup = setup;
@@ -18351,17 +18360,18 @@
 	    title = _title;
 	}
 	exports.setTitle = setTitle;
-	function setClassGeneratorFunc(_classGeneratorFunc) {
-	    classGeneratorFunc = _classGeneratorFunc;
+	function setReplayFuncs(_actorGeneratorFunc, _getReplayStatusFunc, _setReplayStatusFunc) {
+	    actorGeneratorFunc = _actorGeneratorFunc;
+	    getReplayStatusFunc = _getReplayStatusFunc;
+	    setReplayStatusFunc = _setReplayStatusFunc;
 	}
-	exports.setClassGeneratorFunc = setClassGeneratorFunc;
+	exports.setReplayFuncs = setReplayFuncs;
 	function enableDebug(_onSeedChangedFunc) {
 	    if (_onSeedChangedFunc === void 0) { _onSeedChangedFunc = null; }
 	    onSeedChangedFunc = _onSeedChangedFunc;
 	    debug.initSeedUi(setSeeds);
 	    debug.enableShowingErrors();
 	    isDebugEnabled = true;
-	    beginGame();
 	}
 	exports.enableDebug = enableDebug;
 	function beginGame() {
@@ -18370,16 +18380,20 @@
 	    sss.playBgm();
 	    ir.startRecord();
 	    actor_1.default.clear();
+	    initGameFunc();
 	}
 	exports.beginGame = beginGame;
 	function endGame() {
-	    if (exports.scene === Scene.gameover || exports.scene === Scene.replay) {
+	    if (exports.scene === Scene.gameover) {
 	        return;
 	    }
+	    var isReplay = exports.scene === Scene.replay;
 	    exports.scene = Scene.gameover;
 	    exports.ticks = 0;
 	    sss.stopBgm();
-	    ir.saveAsUrl();
+	    if (!isReplay) {
+	        ir.saveAsUrl();
+	    }
 	}
 	exports.endGame = endGame;
 	function beginTitle() {
@@ -18390,11 +18404,10 @@
 	function beginReplay() {
 	    var status = ir.startReplay();
 	    if (status !== false) {
-	        setStatus(status);
 	        exports.scene = Scene.replay;
-	    }
-	    else {
-	        beginTitle();
+	        actor_1.default.clear();
+	        initGameFunc();
+	        setStatus(status);
 	    }
 	}
 	exports.beginReplay = beginReplay;
@@ -18407,6 +18420,19 @@
 	function setup() {
 	    actor_1.default.init();
 	    initFunc();
+	    ui.init(screen.canvas, screen.size);
+	    if (isDebugEnabled) {
+	        beginGame();
+	    }
+	    else {
+	        if (ir.loadFromUrl() === true) {
+	            beginReplay();
+	        }
+	        else {
+	            beginTitle();
+	            initGameFunc();
+	        }
+	    }
 	}
 	function draw() {
 	    screen.clear();
@@ -18428,19 +18454,19 @@
 	        ir.record(getStatus(), ui.getReplayEvents());
 	    }
 	    if (exports.scene === Scene.gameover) {
-	        text.draw('GAME OVER', 64, 60, true);
-	        if (exports.ticks >= 60) {
+	        text.draw('GAME OVER', screen.size.x / 2, screen.size.y * 0.45, true);
+	        if (exports.ticks === 60) {
 	            beginTitle();
 	        }
 	    }
 	    if (exports.scene === Scene.title) {
-	        text.draw(title, 64, 60, true);
-	        if (exports.ticks >= 120) {
+	        text.draw(title, screen.size.x / 2, screen.size.y * 0.45, true);
+	        if (exports.ticks === 120) {
 	            beginReplay();
 	        }
 	    }
 	    if (exports.scene === Scene.replay) {
-	        text.draw('REPLAY', 64, 70, true);
+	        text.draw('REPLAY', screen.size.x / 2, screen.size.y * 0.55, true);
 	        var events = ir.getEvents();
 	        if (events !== false) {
 	            ui.setReplayEvents(events);
@@ -18451,13 +18477,14 @@
 	    }
 	}
 	function getStatus() {
-	    return [exports.ticks, exports.score, exports.random.getStatus(), actor_1.default.getReplayStatus()];
+	    return [exports.ticks, exports.score, exports.random.getStatus(), actor_1.default.getReplayStatus(), getReplayStatusFunc()];
 	}
 	function setStatus(status) {
+	    actor_1.default.setReplayStatus(status[3], actorGeneratorFunc);
+	    setReplayStatusFunc(status[4]);
 	    exports.ticks = status[0];
 	    exports.score = status[1];
 	    exports.random.setStatus(status[2]);
-	    actor_1.default.setReplayStatus(status[3], classGeneratorFunc);
 	}
 	function setSeeds(seed) {
 	    pag.setSeed(seed);
@@ -19014,6 +19041,8 @@
 	    if (isAlignCenter) {
 	        x -= str.length * 5 / 2;
 	    }
+	    x = Math.floor(x);
+	    y = Math.floor(y);
 	    for (var i = 0; i < str.length; i++) {
 	        var idx = charToIndex[str.charCodeAt(i)];
 	        if (idx === -2) {
@@ -19049,6 +19078,7 @@
 	var pixelSize;
 	var currentTargetPos;
 	var prevCursorPos;
+	var targetPos;
 	var intTargetPos;
 	function init(_canvas, _pixelSize) {
 	    canvas = _canvas;
@@ -19074,7 +19104,7 @@
 	    };
 	    p5 = loop.p5;
 	    exports.cursorPos = new p5.Vector();
-	    exports.targetPos = new p5.Vector();
+	    targetPos = new p5.Vector();
 	    currentTargetPos = new p5.Vector();
 	    prevCursorPos = new p5.Vector();
 	    intTargetPos = new p5.Vector();
@@ -19085,7 +19115,6 @@
 	}
 	exports.setCurrentTargetPos = setCurrentTargetPos;
 	function getTargetPos() {
-	    intTargetPos.set(Math.round(exports.targetPos.x), Math.round(exports.targetPos.y));
 	    return intTargetPos;
 	}
 	exports.getTargetPos = getTargetPos;
@@ -19094,18 +19123,22 @@
 	}
 	exports.resetPressed = resetPressed;
 	function getReplayEvents() {
+	    freezeTargetPos();
 	    var tp = getTargetPos();
 	    return [tp.x, tp.y];
 	}
 	exports.getReplayEvents = getReplayEvents;
 	function setReplayEvents(events) {
-	    exports.targetPos.x = events[0];
-	    exports.targetPos.y = events[1];
+	    intTargetPos.x = events[0];
+	    intTargetPos.y = events[1];
 	}
 	exports.setReplayEvents = setReplayEvents;
+	function freezeTargetPos() {
+	    intTargetPos.set(Math.round(targetPos.x), Math.round(targetPos.y));
+	}
 	function onMouseTouchDown(x, y) {
 	    calcCursorPos(x, y, exports.cursorPos);
-	    exports.targetPos.set(currentTargetPos != null ? currentTargetPos : exports.cursorPos);
+	    targetPos.set(currentTargetPos != null ? currentTargetPos : exports.cursorPos);
 	    prevCursorPos.set(exports.cursorPos);
 	    sss.playEmpty();
 	    exports.isPressing = exports.isPressed = true;
@@ -19114,10 +19147,10 @@
 	    calcCursorPos(x, y, exports.cursorPos);
 	    if (exports.isPressing) {
 	        prevCursorPos.sub(exports.cursorPos);
-	        exports.targetPos.sub(prevCursorPos);
+	        targetPos.sub(prevCursorPos);
 	    }
 	    else {
-	        exports.targetPos.set(exports.cursorPos);
+	        targetPos.set(exports.cursorPos);
 	    }
 	    prevCursorPos.set(exports.cursorPos);
 	}
@@ -53876,31 +53909,41 @@
 	var ppe = __webpack_require__(8);
 	var loop = __webpack_require__(6);
 	var actor_1 = __webpack_require__(1);
+	var random_1 = __webpack_require__(12);
 	var ui = __webpack_require__(10);
 	var screen = __webpack_require__(7);
 	var p5 = loop.p5;
 	var p;
 	var random;
-	loop.init(init, update);
-	var scrollScreenSizeX;
-	var scrollOffsetX = 0;
+	loop.init(init, initGame, update);
+	var scrollScreenSizeX = 128;
+	var scrollOffsetX;
 	var player;
 	var flyingCurve;
 	function init() {
 	    p = loop.p;
 	    random = loop.random;
 	    screen.init(96, 128);
-	    scrollScreenSizeX = 128;
-	    ui.init(screen.canvas, screen.size);
-	    p.fill(255);
-	    p.noStroke();
+	    loop.setTitle('SF FLYING CURVE');
+	    loop.setReplayFuncs(generateActor, getReplayStatus, setReplayStatus);
 	    loop.enableDebug(function () {
 	        player.setPixels();
 	        Shot.pixels = null;
 	        Bullet.pixels = null;
 	    });
-	    player = new Player();
-	    _.times(64, function () { new Star(); });
+	}
+	function initGame() {
+	    if (loop.scene !== loop.Scene.replay) {
+	        player = new Player();
+	    }
+	    if (loop.scene === loop.Scene.title) {
+	        player.isVisible = false;
+	    }
+	    scrollOffsetX = 0;
+	    flyingCurve = new FlyingCurve();
+	    _.times(64, function () {
+	        new Star();
+	    });
 	}
 	function update() {
 	    if (loop.ticks % 200 === 0) {
@@ -53921,20 +53964,27 @@
 	        this.fireTicks = 0;
 	        this.chasingSpeed = 1.5;
 	        this.ofs = new p5.Vector();
+	        this.isVisible = true;
+	        this.replayPropertyNames = ['pos.x', 'pos.y', 'fireTicks'];
 	        this.pos.set(screen.size.x / 2, screen.size.y * 0.8);
 	        ui.setCurrentTargetPos(this.pos);
 	        this.setPixels();
 	        this.angle = -p.HALF_PI;
+	        this.collision.set(1, 1);
 	    }
 	    Player.prototype.setPixels = function () {
 	        this.pixels = actor_1.default.generatePixels([' x', 'xxxx']);
 	    };
 	    Player.prototype.update = function () {
-	        this.ofs.set(ui.targetPos);
+	        if (!this.isVisible) {
+	            this.normalizedPos.set(this.pos.x / screen.size.x, this.pos.y / screen.size.y);
+	            return;
+	        }
+	        this.ofs.set(ui.getTargetPos());
 	        this.ofs.sub(this.pos);
 	        var d = this.ofs.mag();
 	        if (d <= this.chasingSpeed) {
-	            this.pos.set(ui.targetPos);
+	            this.pos.set(ui.getTargetPos());
 	        }
 	        else {
 	            this.ofs.div(d / this.chasingSpeed);
@@ -53950,21 +54000,34 @@
 	            new Shot(this.normalizedPos);
 	            this.fireTicks = this.fireInterval;
 	        }
+	        if (this.testCollision('Enemy').length > 0 ||
+	            this.testCollision('Bullet').length > 0) {
+	            this.remove();
+	            ppe.emit('e2', this.pos.x, this.pos.y, 0, 2, 2);
+	            loop.endGame();
+	        }
 	    };
 	    return Player;
 	}(actor_1.default));
 	var Shot = (function (_super) {
 	    __extends(Shot, _super);
 	    function Shot(pos) {
+	        if (pos === void 0) { pos = null; }
 	        _super.call(this);
 	        this.normalizedPos = new p5.Vector();
+	        this.replayPropertyNames = ['normalizedPos.x', 'normalizedPos.y'];
 	        if (Shot.pixels == null) {
 	            Shot.pixels = actor_1.default.generatePixels(['xx', ''], { isMirrorX: true });
 	        }
 	        this.pixels = Shot.pixels;
-	        this.normalizedPos.set(pos);
+	        if (pos != null) {
+	            this.normalizedPos.set(pos);
+	        }
 	        this.angle = -p.HALF_PI;
 	        this.collision.set(10, 10);
+	        setPosFromNormalizedPos(this);
+	        ppe.emit('m1', this.pos.x - 4, this.pos.y - 2, -p.HALF_PI, 0.25);
+	        ppe.emit('m1', this.pos.x + 4, this.pos.y - 2, -p.HALF_PI, 0.25);
 	    }
 	    Shot.prototype.update = function () {
 	        var _this = this;
@@ -53981,15 +54044,21 @@
 	var Enemy = (function (_super) {
 	    __extends(Enemy, _super);
 	    function Enemy() {
-	        _super.apply(this, arguments);
+	        _super.call(this);
 	        this.stepIndex = -1;
 	        this.yWay = 1;
 	        this.normalizedPos = new p5.Vector();
 	        this.prevPos = new p5.Vector();
+	        this.replayPropertyNames =
+	            ['normalizedPos.x', 'normalizedPos.y', 'vel.x', 'vel.y',
+	                'flyingCurve.seed',
+	                'stepIndex', 'sineAngle', 'sineCenterX', 'yWay',
+	                'firingTicks', 'firingInterval'];
+	        this.collision.set(8, 8);
+	        this.angle = p.HALF_PI;
 	    }
 	    Enemy.prototype.spawn = function () {
-	        this.pixels = this.flyingCurve.pixels;
-	        this.angle = p.HALF_PI;
+	        this.setPixels();
 	        switch (this.flyingCurve.spawnType) {
 	            case SpawnType.random:
 	                this.normalizedPos.x = random.get();
@@ -54007,9 +54076,8 @@
 	                break;
 	        }
 	        this.normalizedPos.y = -0.04;
-	        this.firingInterval = 150 / Math.sqrt(loop.ticks * 0.007 + 1);
+	        this.firingInterval = Math.floor(150 / Math.sqrt(loop.ticks * 0.007 + 1));
 	        this.firingTicks = random.getInt(this.firingInterval);
-	        this.collision.set(8, 8);
 	        this.goToNextStep();
 	    };
 	    Enemy.prototype.goToNextStep = function () {
@@ -54038,6 +54106,9 @@
 	                this.vel.div(t);
 	                break;
 	        }
+	    };
+	    Enemy.prototype.setPixels = function () {
+	        this.pixels = this.flyingCurve.pixels;
 	    };
 	    Enemy.prototype.update = function () {
 	        this.prevPos.set(this.pos);
@@ -54101,29 +54172,43 @@
 	    return Enemy;
 	}(actor_1.default));
 	var FlyingCurve = (function () {
-	    function FlyingCurve() {
+	    function FlyingCurve(seed) {
+	        if (seed === void 0) { seed = null; }
 	        this.velScale = new p5.Vector(1, 1);
+	        this.seed = seed == null ? random.getToMaxInt() : seed;
+	        console.log(this.seed);
+	        this.random = new random_1.default();
+	        this.random.setSeed(this.seed);
 	        this.generate();
-	        this.pixels = actor_1.default.generatePixels([' --', '-xx-'], { seed: random.getToMaxInt(), hue: 0.2 });
+	        this.pixels = actor_1.default.generatePixels([' --', '-xx-'], { seed: this.random.getToMaxInt(), hue: 0.2 });
 	    }
 	    FlyingCurve.prototype.generate = function () {
+	        var _this = this;
 	        this.steps = [];
-	        var sc = random.getInt(1, 4);
+	        var sc = this.random.getInt(1, 4);
 	        this.steps = _.times(sc, function () {
 	            var step = new Step();
-	            step.curve.type = getRandomEnum(CurveType);
-	            step.curve.angleSpeed = get2DRandom(0.01, 0.15);
-	            step.curve.width = get2DRandom(0.1, 0.5);
-	            step.ySpeed = get2DRandom(0.005, 0.015);
-	            step.trigger.type = getRandomEnum(TriggerType, 1);
-	            step.trigger.isReverseYWay = random.get() < 0.5;
-	            step.isFiring = sc === 1 || random.get() < 0.75;
+	            step.curve.type = _this.getRandomEnum(CurveType);
+	            step.curve.angleSpeed = _this.get2DRandom(0.01, 0.15);
+	            step.curve.width = _this.get2DRandom(0.1, 0.5);
+	            step.ySpeed = _this.get2DRandom(0.005, 0.015);
+	            step.trigger.type = _this.getRandomEnum(TriggerType, 1);
+	            step.trigger.isReverseYWay = _this.random.get() < 0.5;
+	            step.isFiring = sc === 1 || _this.random.get() < 0.75;
 	            return step;
 	        });
 	        this.steps[this.steps.length - 1].trigger.type = TriggerType.none;
-	        this.spawnType = getRandomEnum(SpawnType);
-	        this.velScale.x = get2DRandom(0.5, 1.5);
-	        this.velScale.y = get2DRandom(0.5, 1.5);
+	        this.spawnType = this.getRandomEnum(SpawnType);
+	        this.velScale.x = this.get2DRandom(0.5, 1.5);
+	        this.velScale.y = this.get2DRandom(0.5, 1.5);
+	    };
+	    FlyingCurve.prototype.get2DRandom = function (from, to) {
+	        var o = (to - from) / 2;
+	        return this.random.get() * o + this.random.get() * o + from;
+	    };
+	    FlyingCurve.prototype.getRandomEnum = function (obj, offset) {
+	        if (offset === void 0) { offset = 0; }
+	        return obj[obj[this.random.getInt(_.keys(obj).length / 2 - offset)]];
 	    };
 	    return FlyingCurve;
 	}());
@@ -54165,30 +54250,30 @@
 	    SpawnType[SpawnType["random"] = 0] = "random";
 	    SpawnType[SpawnType["oppositeX"] = 1] = "oppositeX";
 	})(SpawnType || (SpawnType = {}));
-	function get2DRandom(from, to) {
-	    var o = (to - from) / 2;
-	    return random.get() * o + random.get() * o + from;
-	}
-	function getRandomEnum(obj, offset) {
-	    if (offset === void 0) { offset = 0; }
-	    return obj[obj[random.getInt(_.keys(obj).length / 2 - offset)]];
-	}
 	var Bullet = (function (_super) {
 	    __extends(Bullet, _super);
 	    function Bullet(pos) {
+	        if (pos === void 0) { pos = null; }
 	        _super.call(this);
 	        this.normalizedPos = new p5.Vector();
+	        this.replayPropertyNames =
+	            ['normalizedPos.x', 'normalizedPos.y', 'normalizedAngle', 'normalizedSpeed'];
 	        if (Bullet.pixels == null) {
 	            Bullet.pixels = actor_1.default.generatePixels([' x', 'xx'], { scale: 1, hue: 0.1, isMirrorX: true });
 	        }
 	        this.pixels = Bullet.pixels;
-	        this.normalizedPos.set(pos);
-	        var ofs = new p5.Vector();
-	        ofs.set(player.normalizedPos);
-	        ofs.sub(pos);
-	        this.normalizedAngle = ofs.heading();
-	        this.normalizedSpeed = get2DRandom(0.01, Math.sqrt(loop.ticks * 0.002 + 1) * 0.01);
 	        this.context = screen.overlayContext;
+	        if (pos != null) {
+	            this.normalizedPos.set(pos);
+	            var ofs = new p5.Vector();
+	            ofs.set(player.normalizedPos);
+	            ofs.sub(pos);
+	            this.normalizedAngle = ofs.heading();
+	            this.normalizedSpeed = random.get(0.01, Math.sqrt(loop.ticks * 0.002 + 1) * 0.01);
+	        }
+	        this.collision.set(4, 4);
+	        setPosFromNormalizedPos(this);
+	        ppe.emit('m2', this.pos.x, this.pos.y, this.normalizedAngle, 0.5);
 	    }
 	    Bullet.prototype.update = function () {
 	        this.normalizedPos.x += Math.cos(this.normalizedAngle) * this.normalizedSpeed;
@@ -54226,6 +54311,33 @@
 	        actor.normalizedPos.y < -0.05 || actor.normalizedPos.y > 1.05) {
 	        actor.remove();
 	    }
+	}
+	function generateActor(type, status) {
+	    var actor;
+	    switch (type) {
+	        case 'Player':
+	            player = actor = new Player();
+	            break;
+	        case 'Shot':
+	            actor = new Shot();
+	            break;
+	        case 'Enemy':
+	            actor = new Enemy();
+	            actor.setReplayStatus(status);
+	            actor.flyingCurve = new FlyingCurve(actor.flyingCurve.seed);
+	            actor.setPixels();
+	            break;
+	        case 'Bullet':
+	            actor = new Bullet();
+	            break;
+	    }
+	    actor.setReplayStatus(status);
+	}
+	function getReplayStatus() {
+	    return [flyingCurve.seed];
+	}
+	function setReplayStatus(status) {
+	    flyingCurve = new FlyingCurve(status[0]);
 	}
 
 

@@ -20,7 +20,7 @@ export default class Actor {
   type: string;
   collision: p5.Vector = new p5.Vector();
   context: CanvasRenderingContext2D = screen.context;
-  replayPropertyNames = [];
+  replayPropertyNames: string[];
 
   constructor() {
     Actor.add(this);
@@ -71,6 +71,9 @@ export default class Actor {
   }
 
   getReplayStatus() {
+    if (this.replayPropertyNames == null) {
+      return null;
+    }
     return ir.objectToArray(this, this.replayPropertyNames);
   }
 
@@ -120,18 +123,19 @@ export default class Actor {
   }
 
   static getReplayStatus() {
-    return _.map(Actor.actors, (a: Actor) => {
+    let status = [];
+    _.forEach(Actor.actors, (a: Actor) => {
       let array = a.getReplayStatus();
-      array.unshift(a.type);
-      return array;
+      if (array != null) {
+        status.push([a.type, array]);
+      }
     });
+    return status;
   }
 
-  static setReplayStatus(status: any[], classGenerator) {
+  static setReplayStatus(status: any[], actorGeneratorFunc) {
     _.forEach(status, s => {
-      let actor: Actor = classGenerator(status[0]);
-      status.shift();
-      Actor.actors.push(actor.setReplayStatus(status));
+      actorGeneratorFunc(s[0], s[1]);
     });
   }
 }

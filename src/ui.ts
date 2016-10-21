@@ -3,13 +3,13 @@ import * as loop from './loop';
 
 let p5;
 export let cursorPos: p5.Vector;
-export let targetPos: p5.Vector;
 export let isPressing = false;
 export let isPressed = false;
 let canvas: HTMLCanvasElement;
 let pixelSize: p5.Vector;
 let currentTargetPos: p5.Vector;
 let prevCursorPos: p5.Vector;
+let targetPos: p5.Vector;
 let intTargetPos: p5.Vector;
 
 export function init(_canvas: HTMLCanvasElement, _pixelSize: p5.Vector) {
@@ -47,7 +47,6 @@ export function setCurrentTargetPos(_currentTargetPos: p5.Vector) {
 }
 
 export function getTargetPos() {
-  intTargetPos.set(Math.round(targetPos.x), Math.round(targetPos.y));
   return intTargetPos;
 }
 
@@ -56,13 +55,18 @@ export function resetPressed() {
 }
 
 export function getReplayEvents() {
+  freezeTargetPos();
   const tp = getTargetPos();
   return [tp.x, tp.y];
 }
 
 export function setReplayEvents(events) {
-  targetPos.x = events[0];
-  targetPos.y = events[1];
+  intTargetPos.x = events[0];
+  intTargetPos.y = events[1];
+}
+
+function freezeTargetPos() {
+  intTargetPos.set(Math.round(targetPos.x), Math.round(targetPos.y));
 }
 
 function onMouseTouchDown(x, y) {
