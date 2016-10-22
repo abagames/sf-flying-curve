@@ -1,7 +1,7 @@
 {
   "name": "sf-flying-curve",
   "version": "1.0.0",
-  "description": "Flying curve of shmup small enemies generator",
+  "description": "Generate flying curves of small enemies in a shoot'em up",
   "author": "ABA",
   "license": "MIT",
   "devDependencies": {

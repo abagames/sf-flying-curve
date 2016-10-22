@@ -49,9 +49,9 @@
 	__webpack_require__(15);
 	__webpack_require__(6);
 	__webpack_require__(12);
-	__webpack_require__(7);
 	__webpack_require__(9);
-	module.exports = __webpack_require__(10);
+	__webpack_require__(10);
+	module.exports = __webpack_require__(11);
 
 
 /***/ },
@@ -63,7 +63,7 @@
 	var pag = __webpack_require__(4);
 	var ir = __webpack_require__(5);
 	var loop = __webpack_require__(6);
-	var screen = __webpack_require__(7);
+	var screen = __webpack_require__(9);
 	var p5;
 	var p;
 	var rotationNum = 16;
@@ -18314,13 +18314,13 @@
 
 	"use strict";
 	var pag = __webpack_require__(4);
-	var ppe = __webpack_require__(8);
-	var sss = __webpack_require__(11);
+	var ppe = __webpack_require__(7);
+	var sss = __webpack_require__(8);
 	var ir = __webpack_require__(5);
 	var actor_1 = __webpack_require__(1);
-	var screen = __webpack_require__(7);
-	var text = __webpack_require__(9);
-	var ui = __webpack_require__(10);
+	var screen = __webpack_require__(9);
+	var text = __webpack_require__(10);
+	var ui = __webpack_require__(11);
 	var random_1 = __webpack_require__(12);
 	var debug = __webpack_require__(13);
 	exports.p5 = __webpack_require__(14);
@@ -18512,63 +18512,6 @@
 
 /***/ },
 /* 7 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var ppe = __webpack_require__(8);
-	var loop = __webpack_require__(6);
-	var text = __webpack_require__(9);
-	exports.options = {
-	    backgroundColor: 0,
-	    bloomIntensity: 0.2
-	};
-	var p5;
-	var p;
-	function init(x, y) {
-	    if (x === void 0) { x = 128; }
-	    if (y === void 0) { y = 128; }
-	    p5 = loop.p5;
-	    p = loop.p;
-	    exports.size = new p5.Vector(x, y);
-	    exports.canvas = p.createCanvas(exports.size.x, exports.size.y).canvas;
-	    exports.canvas.setAttribute('style', null);
-	    exports.canvas.setAttribute('id', 'main');
-	    exports.context = exports.canvas.getContext('2d');
-	    ppe.options.canvas = exports.canvas;
-	    var bloomCanvas = document.getElementById('bloom');
-	    bloomCanvas.width = exports.size.x / 2;
-	    bloomCanvas.height = exports.size.y / 2;
-	    exports.bloomContext = bloomCanvas.getContext('2d');
-	    var overlayCanvas = document.getElementById('overlay');
-	    overlayCanvas.width = exports.size.x;
-	    overlayCanvas.height = exports.size.y;
-	    exports.overlayContext = overlayCanvas.getContext('2d');
-	    text.init(exports.overlayContext);
-	}
-	exports.init = init;
-	function clear() {
-	    p.background(exports.options.backgroundColor);
-	    exports.bloomContext.clearRect(0, 0, exports.size.x / 2, exports.size.y / 2);
-	    exports.overlayContext.clearRect(0, 0, exports.size.x, exports.size.y);
-	}
-	exports.clear = clear;
-	function drawBloomParticles() {
-	    var pts = ppe.getParticles();
-	    for (var i = 0; i < pts.length; i++) {
-	        var p_1 = pts[i];
-	        var r = Math.floor(Math.sqrt(p_1.color.r) * 255);
-	        var g = Math.floor(Math.sqrt(p_1.color.g) * 255);
-	        var b = Math.floor(Math.sqrt(p_1.color.b) * 255);
-	        var a = Math.max(p_1.color.r, p_1.color.g, p_1.color.b) * exports.options.bloomIntensity;
-	        exports.bloomContext.fillStyle = "rgba(" + r + "," + g + "," + b + ", " + a + ")";
-	        exports.bloomContext.fillRect((p_1.pos.x - p_1.size) / 2, (p_1.pos.y - p_1.size) / 2, p_1.size, p_1.size);
-	    }
-	}
-	exports.drawBloomParticles = drawBloomParticles;
-
-
-/***/ },
-/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function webpackUniversalModuleDefinition(root, factory) {
@@ -18982,199 +18925,7 @@
 	;
 
 /***/ },
-/* 9 */
-/***/ function(module, exports) {
-
-	"use strict";
-	var dotPatterns;
-	var charToIndex;
-	var context;
-	function init(_context) {
-	    context = _context;
-	    var letterCount = 66;
-	    var letterPatterns = [
-	        0x4644AAA4, 0x6F2496E4, 0xF5646949, 0x167871F4, 0x2489F697,
-	        0xE9669696, 0x79F99668, 0x91967979, 0x1F799976, 0x1171FF17,
-	        0xF99ED196, 0xEE444E99, 0x53592544, 0xF9F11119, 0x9DDB9999,
-	        0x79769996, 0x7ED99611, 0x861E9979, 0x994444E7, 0x46699699,
-	        0x6996FD99, 0xF4469999, 0x2224F248, 0x26244424, 0x64446622,
-	        0x84284248, 0x40F0F024, 0x0F0044E4, 0x480A4E40, 0x9A459124,
-	        0x000A5A16, 0x640444F0, 0x80004049, 0x40400004, 0x44444040,
-	        0x0AA00044, 0x6476E400, 0xFAFA61D9, 0xE44E4EAA, 0x24F42445,
-	        0xF244E544, 0x00000042
-	    ];
-	    var p = 0;
-	    var d = 32;
-	    var pIndex = 0;
-	    dotPatterns = [];
-	    for (var i = 0; i < letterCount; i++) {
-	        var dots = [];
-	        for (var y = 0; y < 5; y++) {
-	            for (var x = 0; x < 4; x++) {
-	                if (++d >= 32) {
-	                    p = letterPatterns[pIndex++];
-	                    d = 0;
-	                }
-	                if ((p & 1) > 0) {
-	                    dots.push({ x: x, y: y });
-	                }
-	                p >>= 1;
-	            }
-	        }
-	        dotPatterns.push(dots);
-	    }
-	    var charStr = "()[]<>=+-*/%&_!?,.:|'\"$@#\\urdl";
-	    charToIndex = [];
-	    for (var c = 0; c < 128; c++) {
-	        var li = -2;
-	        if (c == 32) {
-	            li = -1;
-	        }
-	        else if (c >= 48 && c < 58) {
-	            li = c - 48;
-	        }
-	        else if (c >= 65 && c < 90) {
-	            li = c - 65 + 10;
-	        }
-	        else {
-	            var ci = charStr.indexOf(String.fromCharCode(c));
-	            if (ci >= 0) {
-	                li = ci + 36;
-	            }
-	        }
-	        charToIndex.push(li);
-	    }
-	}
-	exports.init = init;
-	function draw(str, x, y, isAlignCenter) {
-	    if (isAlignCenter === void 0) { isAlignCenter = false; }
-	    context.fillStyle = 'white';
-	    if (isAlignCenter) {
-	        x -= str.length * 5 / 2;
-	    }
-	    x = Math.floor(x);
-	    y = Math.floor(y);
-	    for (var i = 0; i < str.length; i++) {
-	        var idx = charToIndex[str.charCodeAt(i)];
-	        if (idx === -2) {
-	            throw "invalid char: " + str.charAt(i);
-	        }
-	        else if (idx >= 0) {
-	            drawLetter(idx, x, y);
-	        }
-	        x += 5;
-	    }
-	}
-	exports.draw = draw;
-	function drawLetter(idx, x, y) {
-	    var p = dotPatterns[idx];
-	    for (var i = 0; i < p.length; i++) {
-	        var d = p[i];
-	        context.fillRect(d.x + x, d.y + y, 1, 1);
-	    }
-	}
-
-
-/***/ },
-/* 10 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	var sss = __webpack_require__(11);
-	var loop = __webpack_require__(6);
-	var p5;
-	exports.isPressing = false;
-	exports.isPressed = false;
-	var canvas;
-	var pixelSize;
-	var currentTargetPos;
-	var prevCursorPos;
-	var targetPos;
-	var intTargetPos;
-	function init(_canvas, _pixelSize) {
-	    canvas = _canvas;
-	    pixelSize = _pixelSize;
-	    document.onmousedown = function (e) {
-	        onMouseTouchDown(e.pageX, e.pageY);
-	    };
-	    document.ontouchstart = function (e) {
-	        onMouseTouchDown(e.touches[0].pageX, e.touches[0].pageY);
-	    };
-	    document.onmousemove = function (e) {
-	        onMouseTouchMove(e.pageX, e.pageY);
-	    };
-	    document.ontouchmove = function (e) {
-	        e.preventDefault();
-	        onMouseTouchMove(e.touches[0].pageX, e.touches[0].pageY);
-	    };
-	    document.onmouseup = function (e) {
-	        onMouseTouchUp(e);
-	    };
-	    document.ontouchend = function (e) {
-	        onMouseTouchUp(e);
-	    };
-	    p5 = loop.p5;
-	    exports.cursorPos = new p5.Vector();
-	    targetPos = new p5.Vector();
-	    currentTargetPos = new p5.Vector();
-	    prevCursorPos = new p5.Vector();
-	    intTargetPos = new p5.Vector();
-	}
-	exports.init = init;
-	function setCurrentTargetPos(_currentTargetPos) {
-	    currentTargetPos = _currentTargetPos;
-	}
-	exports.setCurrentTargetPos = setCurrentTargetPos;
-	function getTargetPos() {
-	    return intTargetPos;
-	}
-	exports.getTargetPos = getTargetPos;
-	function resetPressed() {
-	    exports.isPressed = false;
-	}
-	exports.resetPressed = resetPressed;
-	function getReplayEvents() {
-	    freezeTargetPos();
-	    var tp = getTargetPos();
-	    return [tp.x, tp.y];
-	}
-	exports.getReplayEvents = getReplayEvents;
-	function setReplayEvents(events) {
-	    intTargetPos.x = events[0];
-	    intTargetPos.y = events[1];
-	}
-	exports.setReplayEvents = setReplayEvents;
-	function freezeTargetPos() {
-	    intTargetPos.set(Math.round(targetPos.x), Math.round(targetPos.y));
-	}
-	function onMouseTouchDown(x, y) {
-	    calcCursorPos(x, y, exports.cursorPos);
-	    targetPos.set(currentTargetPos != null ? currentTargetPos : exports.cursorPos);
-	    prevCursorPos.set(exports.cursorPos);
-	    sss.playEmpty();
-	    exports.isPressing = exports.isPressed = true;
-	}
-	function onMouseTouchMove(x, y) {
-	    calcCursorPos(x, y, exports.cursorPos);
-	    if (exports.isPressing) {
-	        prevCursorPos.sub(exports.cursorPos);
-	        targetPos.sub(prevCursorPos);
-	    }
-	    else {
-	        targetPos.set(exports.cursorPos);
-	    }
-	    prevCursorPos.set(exports.cursorPos);
-	}
-	function calcCursorPos(x, y, v) {
-	    v.set(((x - canvas.offsetLeft) / canvas.clientWidth + 0.5) * pixelSize.x, ((y - canvas.offsetTop) / canvas.clientHeight + 0.5) * pixelSize.y);
-	}
-	function onMouseTouchUp(e) {
-	    exports.isPressing = false;
-	}
-
-
-/***/ },
-/* 11 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	(function webpackUniversalModuleDefinition(root, factory) {
@@ -20779,6 +20530,255 @@
 	/******/ ])
 	});
 	;
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var ppe = __webpack_require__(7);
+	var loop = __webpack_require__(6);
+	var text = __webpack_require__(10);
+	exports.options = {
+	    backgroundColor: 0,
+	    bloomIntensity: 0.2
+	};
+	var p5;
+	var p;
+	function init(x, y) {
+	    if (x === void 0) { x = 128; }
+	    if (y === void 0) { y = 128; }
+	    p5 = loop.p5;
+	    p = loop.p;
+	    exports.size = new p5.Vector(x, y);
+	    exports.canvas = p.createCanvas(exports.size.x, exports.size.y).canvas;
+	    exports.canvas.setAttribute('style', null);
+	    exports.canvas.setAttribute('id', 'main');
+	    exports.context = exports.canvas.getContext('2d');
+	    ppe.options.canvas = exports.canvas;
+	    var bloomCanvas = document.getElementById('bloom');
+	    bloomCanvas.width = exports.size.x / 2;
+	    bloomCanvas.height = exports.size.y / 2;
+	    exports.bloomContext = bloomCanvas.getContext('2d');
+	    var overlayCanvas = document.getElementById('overlay');
+	    overlayCanvas.width = exports.size.x;
+	    overlayCanvas.height = exports.size.y;
+	    exports.overlayContext = overlayCanvas.getContext('2d');
+	    text.init(exports.overlayContext);
+	}
+	exports.init = init;
+	function clear() {
+	    p.background(exports.options.backgroundColor);
+	    exports.bloomContext.clearRect(0, 0, exports.size.x / 2, exports.size.y / 2);
+	    exports.overlayContext.clearRect(0, 0, exports.size.x, exports.size.y);
+	}
+	exports.clear = clear;
+	function drawBloomParticles() {
+	    var pts = ppe.getParticles();
+	    for (var i = 0; i < pts.length; i++) {
+	        var p_1 = pts[i];
+	        var r = Math.floor(Math.sqrt(p_1.color.r) * 255);
+	        var g = Math.floor(Math.sqrt(p_1.color.g) * 255);
+	        var b = Math.floor(Math.sqrt(p_1.color.b) * 255);
+	        var a = Math.max(p_1.color.r, p_1.color.g, p_1.color.b) * exports.options.bloomIntensity;
+	        exports.bloomContext.fillStyle = "rgba(" + r + "," + g + "," + b + ", " + a + ")";
+	        exports.bloomContext.fillRect((p_1.pos.x - p_1.size) / 2, (p_1.pos.y - p_1.size) / 2, p_1.size, p_1.size);
+	    }
+	}
+	exports.drawBloomParticles = drawBloomParticles;
+
+
+/***/ },
+/* 10 */
+/***/ function(module, exports) {
+
+	"use strict";
+	var dotPatterns;
+	var charToIndex;
+	var context;
+	function init(_context) {
+	    context = _context;
+	    var letterCount = 66;
+	    var letterPatterns = [
+	        0x4644AAA4, 0x6F2496E4, 0xF5646949, 0x167871F4, 0x2489F697,
+	        0xE9669696, 0x79F99668, 0x91967979, 0x1F799976, 0x1171FF17,
+	        0xF99ED196, 0xEE444E99, 0x53592544, 0xF9F11119, 0x9DDB9999,
+	        0x79769996, 0x7ED99611, 0x861E9979, 0x994444E7, 0x46699699,
+	        0x6996FD99, 0xF4469999, 0x2224F248, 0x26244424, 0x64446622,
+	        0x84284248, 0x40F0F024, 0x0F0044E4, 0x480A4E40, 0x9A459124,
+	        0x000A5A16, 0x640444F0, 0x80004049, 0x40400004, 0x44444040,
+	        0x0AA00044, 0x6476E400, 0xFAFA61D9, 0xE44E4EAA, 0x24F42445,
+	        0xF244E544, 0x00000042
+	    ];
+	    var p = 0;
+	    var d = 32;
+	    var pIndex = 0;
+	    dotPatterns = [];
+	    for (var i = 0; i < letterCount; i++) {
+	        var dots = [];
+	        for (var y = 0; y < 5; y++) {
+	            for (var x = 0; x < 4; x++) {
+	                if (++d >= 32) {
+	                    p = letterPatterns[pIndex++];
+	                    d = 0;
+	                }
+	                if ((p & 1) > 0) {
+	                    dots.push({ x: x, y: y });
+	                }
+	                p >>= 1;
+	            }
+	        }
+	        dotPatterns.push(dots);
+	    }
+	    var charStr = "()[]<>=+-*/%&_!?,.:|'\"$@#\\urdl";
+	    charToIndex = [];
+	    for (var c = 0; c < 128; c++) {
+	        var li = -2;
+	        if (c == 32) {
+	            li = -1;
+	        }
+	        else if (c >= 48 && c < 58) {
+	            li = c - 48;
+	        }
+	        else if (c >= 65 && c < 90) {
+	            li = c - 65 + 10;
+	        }
+	        else {
+	            var ci = charStr.indexOf(String.fromCharCode(c));
+	            if (ci >= 0) {
+	                li = ci + 36;
+	            }
+	        }
+	        charToIndex.push(li);
+	    }
+	}
+	exports.init = init;
+	function draw(str, x, y, isAlignCenter) {
+	    if (isAlignCenter === void 0) { isAlignCenter = false; }
+	    context.fillStyle = 'white';
+	    if (isAlignCenter) {
+	        x -= str.length * 5 / 2;
+	    }
+	    x = Math.floor(x);
+	    y = Math.floor(y);
+	    for (var i = 0; i < str.length; i++) {
+	        var idx = charToIndex[str.charCodeAt(i)];
+	        if (idx === -2) {
+	            throw "invalid char: " + str.charAt(i);
+	        }
+	        else if (idx >= 0) {
+	            drawLetter(idx, x, y);
+	        }
+	        x += 5;
+	    }
+	}
+	exports.draw = draw;
+	function drawLetter(idx, x, y) {
+	    var p = dotPatterns[idx];
+	    for (var i = 0; i < p.length; i++) {
+	        var d = p[i];
+	        context.fillRect(d.x + x, d.y + y, 1, 1);
+	    }
+	}
+
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	var sss = __webpack_require__(8);
+	var loop = __webpack_require__(6);
+	var p5;
+	exports.isPressing = false;
+	exports.isPressed = false;
+	var canvas;
+	var pixelSize;
+	var currentTargetPos;
+	var prevCursorPos;
+	var targetPos;
+	var intTargetPos;
+	function init(_canvas, _pixelSize) {
+	    canvas = _canvas;
+	    pixelSize = _pixelSize;
+	    document.onmousedown = function (e) {
+	        onMouseTouchDown(e.pageX, e.pageY);
+	    };
+	    document.ontouchstart = function (e) {
+	        onMouseTouchDown(e.touches[0].pageX, e.touches[0].pageY);
+	    };
+	    document.onmousemove = function (e) {
+	        onMouseTouchMove(e.pageX, e.pageY);
+	    };
+	    document.ontouchmove = function (e) {
+	        e.preventDefault();
+	        onMouseTouchMove(e.touches[0].pageX, e.touches[0].pageY);
+	    };
+	    document.onmouseup = function (e) {
+	        onMouseTouchUp(e);
+	    };
+	    document.ontouchend = function (e) {
+	        onMouseTouchUp(e);
+	    };
+	    p5 = loop.p5;
+	    exports.cursorPos = new p5.Vector();
+	    targetPos = new p5.Vector();
+	    currentTargetPos = new p5.Vector();
+	    prevCursorPos = new p5.Vector();
+	    intTargetPos = new p5.Vector();
+	}
+	exports.init = init;
+	function setCurrentTargetPos(_currentTargetPos) {
+	    currentTargetPos = _currentTargetPos;
+	}
+	exports.setCurrentTargetPos = setCurrentTargetPos;
+	function getTargetPos() {
+	    return intTargetPos;
+	}
+	exports.getTargetPos = getTargetPos;
+	function resetPressed() {
+	    exports.isPressed = false;
+	}
+	exports.resetPressed = resetPressed;
+	function getReplayEvents() {
+	    freezeTargetPos();
+	    var tp = getTargetPos();
+	    return [tp.x, tp.y];
+	}
+	exports.getReplayEvents = getReplayEvents;
+	function setReplayEvents(events) {
+	    intTargetPos.x = events[0];
+	    intTargetPos.y = events[1];
+	}
+	exports.setReplayEvents = setReplayEvents;
+	function freezeTargetPos() {
+	    intTargetPos.set(Math.round(targetPos.x), Math.round(targetPos.y));
+	}
+	function onMouseTouchDown(x, y) {
+	    calcCursorPos(x, y, exports.cursorPos);
+	    targetPos.set(currentTargetPos != null ? currentTargetPos : exports.cursorPos);
+	    prevCursorPos.set(exports.cursorPos);
+	    sss.playEmpty();
+	    exports.isPressing = exports.isPressed = true;
+	}
+	function onMouseTouchMove(x, y) {
+	    calcCursorPos(x, y, exports.cursorPos);
+	    if (exports.isPressing) {
+	        prevCursorPos.sub(exports.cursorPos);
+	        targetPos.sub(prevCursorPos);
+	    }
+	    else {
+	        targetPos.set(exports.cursorPos);
+	    }
+	    prevCursorPos.set(exports.cursorPos);
+	}
+	function calcCursorPos(x, y, v) {
+	    v.set(((x - canvas.offsetLeft) / canvas.clientWidth + 0.5) * pixelSize.x, ((y - canvas.offsetTop) / canvas.clientHeight + 0.5) * pixelSize.y);
+	}
+	function onMouseTouchUp(e) {
+	    exports.isPressing = false;
+	}
+
 
 /***/ },
 /* 12 */
@@ -53917,13 +53917,13 @@
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
 	var _ = __webpack_require__(2);
-	var ppe = __webpack_require__(8);
-	var sss = __webpack_require__(11);
+	var ppe = __webpack_require__(7);
+	var sss = __webpack_require__(8);
 	var loop = __webpack_require__(6);
 	var actor_1 = __webpack_require__(1);
 	var random_1 = __webpack_require__(12);
-	var ui = __webpack_require__(10);
-	var screen = __webpack_require__(7);
+	var ui = __webpack_require__(11);
+	var screen = __webpack_require__(9);
 	var p5 = loop.p5;
 	var p;
 	var random;
