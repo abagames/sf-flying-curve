@@ -1,11 +1,11 @@
 import * as _ from 'lodash';
 import * as pag from 'pag';
+import * as ppe from 'ppe';
 import * as ir from 'ir';
-import * as loop from './loop';
+import * as s1 from './index';
 import * as screen from './screen';
 
 let p5;
-let p: p5;
 const rotationNum = 16;
 
 export default class Actor {
@@ -21,6 +21,7 @@ export default class Actor {
   collision: p5.Vector = new p5.Vector();
   context: CanvasRenderingContext2D = screen.context;
   replayPropertyNames: string[];
+  modules: any[] = [];
 
   constructor() {
     Actor.add(this);
@@ -34,6 +35,9 @@ export default class Actor {
     if (this.pixels != null) {
       this.drawPixels();
     }
+    _.forEach(this.modules, m => {
+      m.update();
+    });
     this.ticks++;
   }
 
@@ -41,33 +45,38 @@ export default class Actor {
     this.isAlive = false;
   }
 
+  addModule(module) {
+    this.modules.push(module);
+  }
+
+  clearModules() {
+    this.modules = [];
+  }
+
   testCollision(type: string) {
     return _.filter<Actor>(Actor.get(type), a =>
-      p.abs(this.pos.x - a.pos.x) < (this.collision.x + a.collision.x) / 2 &&
-      p.abs(this.pos.y - a.pos.y) < (this.collision.y + a.collision.y) / 2
+      Math.abs(this.pos.x - a.pos.x) < (this.collision.x + a.collision.x) / 2 &&
+      Math.abs(this.pos.y - a.pos.y) < (this.collision.y + a.collision.y) / 2
     );
   }
 
-  drawPixels() {
+  emitParticles(patternName: string, ...args) {
+    (<any>ppe.emit)(patternName, this.pos.x, this.pos.y, this.angle, ...args);
+  }
+
+  drawPixels(x: number = null, y: number = null) {
+    if (x == null) {
+      x = this.pos.x;
+    }
+    if (y == null) {
+      y = this.pos.y;
+    }
     let a = this.angle;
     if (a < 0) {
       a = Math.PI * 2 - Math.abs(a % (Math.PI * 2));
     }
-    const pxs: pag.Pixel[][] =
-      this.pixels[Math.round(a / (Math.PI * 2 / rotationNum)) % rotationNum];
-    const pw = pxs.length;
-    const ph = pxs[0].length;
-    const sbx = Math.floor(this.pos.x - pw / 2);
-    const sby = Math.floor(this.pos.y - ph / 2);
-    for (let y = 0, sy = sby; y < ph; y++ , sy++) {
-      for (let x = 0, sx = sbx; x < pw; x++ , sx++) {
-        var px = pxs[x][y];
-        if (!px.isEmpty) {
-          this.context.fillStyle = px.style;
-          this.context.fillRect(sx, sy, 1, 1);
-        }
-      }
-    }
+    const ri = Math.round(a / (Math.PI * 2 / rotationNum)) % rotationNum;
+    pag.draw(this.context, this.pixels, x, y, ri);
   }
 
   getReplayStatus() {
@@ -84,8 +93,7 @@ export default class Actor {
   static actors: any[];
 
   static init() {
-    p5 = loop.p5;
-    p = loop.p;
+    p5 = s1.p5;
     pag.defaultOptions.isMirrorY = true;
     pag.defaultOptions.rotationNum = rotationNum;
     pag.defaultOptions.scale = 2;
@@ -102,20 +110,17 @@ export default class Actor {
 
   static update() {
     Actor.actors.sort((a, b) => a.priority - b.priority);
-    _.forEach(Actor.actors, a => {
-      a.update();
-    });
     for (let i = 0; i < Actor.actors.length;) {
-      if (Actor.actors[i].isAlive === false) {
+      const a = Actor.actors[i];
+      if (a.isAlive !== false) {
+        a.update();
+      }
+      if (a.isAlive === false) {
         Actor.actors.splice(i, 1);
       } else {
         i++;
       }
     }
-  }
-
-  static generatePixels(pattern: string[], options = {}): pag.Pixel[][][] {
-    return pag.generate(pattern, options);
   }
 
   static get(type: string) {

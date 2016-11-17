@@ -1,5 +1,5 @@
 import * as sss from 'sss';
-import * as loop from './loop';
+import * as s1 from './index';
 
 let p5;
 export let cursorPos: p5.Vector;
@@ -34,7 +34,7 @@ export function init(_canvas: HTMLCanvasElement, _pixelSize: p5.Vector) {
   document.ontouchend = (e) => {
     onMouseTouchUp(e);
   };
-  p5 = loop.p5;
+  p5 = s1.p5;
   cursorPos = new p5.Vector();
   targetPos = new p5.Vector();
   currentTargetPos = new p5.Vector();
